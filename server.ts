@@ -16,7 +16,7 @@ import { DEFAULT_QUESTIONS_FR } from "./src/data/defaultQuestionsFr";
 import multer from "multer";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { initializeApp as initializeAdminApp, getApps as getAdminApps, App as AdminApp } from "firebase-admin/app";
+import { initializeApp as initializeAdminApp, getApps as getAdminApps, App as AdminApp, cert } from "firebase-admin/app";
 import {
   getFirestore as getAdminFirestore,
   Firestore as AdminFirestore,
@@ -47,15 +47,40 @@ const firebaseConfig = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), "firebase-applet-config.json"), "utf8")
 );
 
+// Resolves how the Admin SDK authenticates to the real Firebase project, in priority order:
+// 1. An explicit service account key in FIREBASE_SERVICE_ACCOUNT_KEY - required on hosting that
+//    isn't Google Cloud itself (e.g. Render, Railway, Fly.io), since only GCP's own metadata
+//    server can resolve Application Default Credentials automatically. Accepts either the raw
+//    JSON key file contents, or that same JSON base64-encoded (handy when a platform's env var
+//    editor mangles newlines/quotes in raw JSON) - whichever the deployment platform makes
+//    easiest to paste in as one value.
+// 2. Nothing explicit: falls through to Application Default Credentials, which resolves
+//    automatically on Cloud Run/Cloud Functions/GCE (via AI Studio's own deploy pipeline) with no
+//    configuration needed, and is also what lets FIRESTORE_EMULATOR_HOST/
+//    FIREBASE_AUTH_EMULATOR_HOST redirect everything to the local emulators for dev - see README
+//    "Testing against local emulators".
+function resolveAdminCredential() {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (!raw) return undefined;
+  try {
+    const jsonText = raw.trim().startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf8");
+    return cert(JSON.parse(jsonText));
+  } catch (err) {
+    console.error("[Admin SDK] FIREBASE_SERVICE_ACCOUNT_KEY is set but could not be parsed as JSON or base64 JSON - falling back to Application Default Credentials:", err);
+    return undefined;
+  }
+}
+
 // Initialize the server as a trusted backend via the Firebase ADMIN SDK (not the public client
 // SDK the rest of the app uses): it bypasses firestore.rules entirely, which is what this
-// process needs since it never signs in as an end user. In production (Cloud Run, via AI Studio)
-// this authenticates automatically with the service's attached Application Default Credentials.
-// For local development/testing, point FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST at
-// the Firebase emulators and no credentials are needed at all.
+// process needs since it never signs in as an end user.
+const adminCredential = resolveAdminCredential();
 const adminApp: AdminApp = getAdminApps().length
   ? getAdminApps()[0]
-  : initializeAdminApp({ projectId: firebaseConfig.projectId });
+  : initializeAdminApp({
+      projectId: firebaseConfig.projectId,
+      ...(adminCredential ? { credential: adminCredential } : {})
+    });
 const db = getAdminFirestore(adminApp, firebaseConfig.firestoreDatabaseId);
 const adminAuth = getAdminAuth(adminApp);
 
