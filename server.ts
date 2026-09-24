@@ -1,9 +1,9 @@
 import dotenv from "dotenv";
 // Loads GEMINI_API_KEY (and any other server-side var) from .env.local into process.env for local
 // `npm run dev`. Vite only does this substitution for its own client bundle (and only for
-// VITE_-prefixed names), never for this Node process. In the real Cloud Run/AI Studio deployment
-// there is no .env.local file, so this is a harmless no-op there - platform env vars already set
-// on process.env take precedence, since dotenv never overrides an existing value.
+// VITE_-prefixed names), never for this Node process. In production there is no .env.local file,
+// so this is a harmless no-op there - platform env vars already set on process.env take
+// precedence, since dotenv never overrides an existing value.
 dotenv.config({ path: ".env.local" });
 
 import express from "express";
@@ -34,8 +34,8 @@ import { PDFParse } from "pdf-parse";
 // available (e.g. local development without `gcloud auth application-default login`, or without
 // GOOGLE_APPLICATION_CREDENTIALS/emulator env vars set). Left unhandled, that crashes the whole
 // process even though every Firestore call site in this file already has its own try/catch.
-// In production (Cloud Run via AI Studio) Application Default Credentials are always available,
-// so this only ever fires in a misconfigured local dev environment - log it and keep serving the
+// On Google Cloud hosting, Application Default Credentials are always available, so this only
+// ever fires in a misconfigured local dev environment - log it and keep serving the
 // rest of the app (Gemini question generation, local fallback questions, static assets) rather
 // than taking the whole server down over an optional persistence feature.
 process.on("unhandledRejection", (reason) => {
@@ -55,8 +55,8 @@ const firebaseConfig = JSON.parse(
 //    editor mangles newlines/quotes in raw JSON) - whichever the deployment platform makes
 //    easiest to paste in as one value.
 // 2. Nothing explicit: falls through to Application Default Credentials, which resolves
-//    automatically on Cloud Run/Cloud Functions/GCE (via AI Studio's own deploy pipeline) with no
-//    configuration needed, and is also what lets FIRESTORE_EMULATOR_HOST/
+//    automatically on Cloud Run/Cloud Functions/GCE with no configuration needed, and is also
+//    what lets FIRESTORE_EMULATOR_HOST/
 //    FIREBASE_AUTH_EMULATOR_HOST redirect everything to the local emulators for dev - see README
 //    "Testing against local emulators".
 function resolveAdminCredential() {
