@@ -1,0 +1,144 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net - Default Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Hardened Global Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Standard verified user check, supporting anonymous auth if preferred
+    function isVerified() {
+      return isSignedIn();
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Admin status prefers the `admin` custom claim on the caller's ID token (set server-side by
+    // POST /api/admin/set-role via the Firebase Admin SDK - see server.ts): it's free to check
+    // (no extra document read) and can't be forged by a client. The Firestore `role` field is
+    // kept as a fallback so a freshly console-bootstrapped admin (role: 'admin' in Firestore, but
+    // no custom claim minted yet) can still call that same endpoint on themselves once to mint
+    // it - see README "Promoting the first admin". There is no hardcoded bootstrap email.
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.admin == true ||
+        (exists(/databases/$(database)/documents/sessions/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/sessions/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    // --- Validation Helper: UserSession ---
+    function isValidSession(data) {
+      return (
+        data.keys().hasAll(['userId', 'email', 'totalAnswered', 'scorePercentage', 'incorrectIds', 'answeredQuestions', 'mastery']) &&
+        data.userId is string && data.userId.size() <= 128 &&
+        data.email is string && data.email.size() <= 256 &&
+        data.totalAnswered is int && data.totalAnswered >= 0 &&
+        data.scorePercentage is number && data.scorePercentage >= 0.0 && data.scorePercentage <= 100.0 &&
+        data.incorrectIds is list && data.incorrectIds.size() <= 2000 &&
+        data.answeredQuestions is map &&
+        data.mastery is map &&
+        (!data.keys().hasAny(['durationOfUtilization']) || (data.durationOfUtilization is int && data.durationOfUtilization >= 0)) &&
+        (!data.keys().hasAny(['accessStatus']) || (data.accessStatus is string && (data.accessStatus == 'pending' || data.accessStatus == 'granted' || data.accessStatus == 'restricted'))) &&
+        (!data.keys().hasAny(['role']) || (data.role is string && (data.role == 'admin' || data.role == 'candidate'))) &&
+        (!data.keys().hasAny(['testsCount']) || (data.testsCount is int && data.testsCount >= 0)) &&
+        (!data.keys().hasAny(['createdAt']) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
+        (!data.keys().hasAny(['lastLoginAt']) || (data.lastLoginAt is string && data.lastLoginAt.size() <= 64))
+      );
+    }
+
+    // --- Validation Helper: ConfigSettings ---
+    function isValidConfig(data) {
+      return (
+        data.keys().hasAll(['examTimerMinutes', 'maxTestsLimit']) &&
+        data.keys().size() == 2 &&
+        data.examTimerMinutes is int && data.examTimerMinutes >= 1 && data.examTimerMinutes <= 1440 &&
+        data.maxTestsLimit is int && data.maxTestsLimit >= 1 && data.maxTestsLimit <= 100
+      );
+    }
+
+    // --- Core Match Blocks ---
+
+    // questions Collection - every real write happens server-side via the Admin SDK (question
+    // generation, book extraction), which bypasses these rules entirely; the client never writes
+    // here directly. Client `create` used to be open to any signed-in user "just in case" - that's
+    // needless attack surface (a malicious or compromised client could inject fake/oversized
+    // question docs straight into the bank), so it's closed the same as update/delete.
+    match /questions/{questionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    // sessions Collection
+    match /sessions/{userId} {
+      allow get: if isSignedIn() && (userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // A self-service create must never be able to grant itself elevated privilege: role is
+      // forced to 'candidate' (admin promotion can only happen later, via an update performed
+      // by an existing admin through the isAdmin() branch of the update rule below), and
+      // accessStatus is forced to 'pending' (only an admin's later update can move it to
+      // 'granted' - see the update rule) so a candidate can never self-approve their own account.
+      allow create: if isVerified() && userId == request.auth.uid && isValidId(userId) && isValidSession(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        (!incoming().keys().hasAny(['role']) || incoming().role == 'candidate') &&
+        (!incoming().keys().hasAny(['accessStatus']) || incoming().accessStatus == 'pending');
+      
+      allow update: if isVerified() && isValidId(userId) && isValidSession(incoming()) && (
+        (userId == request.auth.uid && 
+         incoming().userId == existing().userId &&
+         incoming().email == existing().email &&
+         incoming().role == existing().role &&
+         incoming().accessStatus == existing().accessStatus) ||
+        isAdmin()
+      );
+      
+      allow delete: if isSignedIn() && (userId == request.auth.uid || isAdmin());
+    }
+
+    // config Collection
+    match /config/{configId} {
+      allow read: if isSignedIn() && isValidId(configId);
+      allow write: if isVerified() && isValidId(configId) && isAdmin() && isValidConfig(incoming());
+    }
+
+    // books Collection (PMP study material, uploaded and managed by admins only - see
+    // Sidebar.tsx's isAdmin gate on the upload UI and server.ts's /api/books/upload). Write access
+    // used to be open to any signed-in user, including anonymous guests: since the server itself
+    // uses the Admin SDK (which bypasses these rules) for every legitimate write, that was pure
+    // unused attack surface - a malicious/compromised client could otherwise write fabricated
+    // "study material" straight into Firestore, bypassing the server's PDF parsing/chunking and
+    // poisoning what the RAG-grounded features read back.
+    match /books/{bookId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && isAdmin();
+
+      match /chunks/{chunkId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSignedIn() && isAdmin();
+      }
+
+      match /glossaryTerms/{termId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSignedIn() && isAdmin();
+      }
+    }
+
+  }
+}

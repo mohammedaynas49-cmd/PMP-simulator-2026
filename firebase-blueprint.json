@@ -1,0 +1,133 @@
+{
+  "entities": {
+    "Question": {
+      "title": "Question",
+      "description": "Represents a PMP Exam situational or practice question.",
+      "type": "object",
+      "properties": {
+        "question_id": {
+          "type": "string",
+          "description": "Unique identifier of the question."
+        },
+        "eco_domain": {
+          "type": "string",
+          "enum": ["People", "Process", "Business Environment"],
+          "description": "The PMP Exam Content Outline domain."
+        },
+        "scenario": {
+          "type": "string",
+          "description": "The situational corporate scenario representing real-world PM conflicts."
+        },
+        "options": {
+          "type": "array",
+          "description": "Four multiple-choice options (A, B, C, D)."
+        },
+        "correct_option": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D"],
+          "description": "The correct option corresponding to the PMBOK 8 / Agile mindset."
+        },
+        "explanation": {
+          "type": "string",
+          "description": "Detailed explanation and coaching from the AI Coach explaining why options are correct/incorrect."
+        },
+        "pmbok_8_reference": {
+          "type": "string",
+          "description": "Exact mapping to PMBOK Guide 8th Edition principles/domains."
+        },
+        "methodology": {
+          "type": "string",
+          "enum": ["Agile/Hybrid", "Predictive"],
+          "description": "The project methodology style."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Contextual environment tags like AI, sustainability, data-driven."
+        }
+      },
+      "required": ["question_id", "eco_domain", "scenario", "options", "correct_option", "explanation", "pmbok_8_reference", "methodology", "tags"]
+    },
+    "UserSession": {
+      "title": "UserSession",
+      "description": "Stores user statistics, mastery percentages, and tracking matrices.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Authentication user ID."
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address."
+        },
+        "totalAnswered": {
+          "type": "integer",
+          "description": "Total number of questions answered."
+        },
+        "scorePercentage": {
+          "type": "number",
+          "description": "Overall score percentage."
+        },
+        "incorrectIds": {
+          "type": "array",
+          "description": "List of question IDs where the user gave incorrect answers."
+        },
+        "answeredQuestions": {
+          "type": "object",
+          "description": "Map of question_id to selected_option to preserve answers across restarts."
+        },
+        "mastery": {
+          "type": "object",
+          "description": "Domain percentages: People, Process, Business Environment successes."
+        },
+        "durationOfUtilization": {
+          "type": "integer",
+          "description": "Cumulative time in seconds spent utilizing the simulator."
+        },
+        "accessStatus": {
+          "type": "string",
+          "description": "Status of the user's access ('granted' or 'restricted')."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user role ('admin' or 'candidate')."
+        },
+        "testsCount": {
+          "type": "integer",
+          "description": "The number of exam sessions launched."
+        }
+      },
+      "required": ["userId", "email", "totalAnswered", "scorePercentage", "incorrectIds", "answeredQuestions", "mastery", "durationOfUtilization", "accessStatus", "role", "testsCount"]
+    },
+    "ConfigSettings": {
+      "title": "ConfigSettings",
+      "description": "Global administrator configurations like timers and test counts.",
+      "type": "object",
+      "properties": {
+        "examTimerMinutes": {
+          "type": "integer",
+          "description": "Maximum exam timer limit in minutes."
+        },
+        "maxTestsLimit": {
+          "type": "integer",
+          "description": "Allowed number of mock exam attempts."
+        }
+      },
+      "required": ["examTimerMinutes", "maxTestsLimit"]
+    }
+  },
+  "firestore": {
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Master list of all generated or active questions in the simulator."
+    },
+    "/sessions/{userId}": {
+      "schema": "UserSession",
+      "description": "Individual project manager's testing progress and target metric matrices."
+    },
+    "/config/{configId}": {
+      "schema": "ConfigSettings",
+      "description": "Global system properties enforced."
+    }
+  }
+}
