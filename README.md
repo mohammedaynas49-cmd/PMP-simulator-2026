@@ -1,12 +1,9 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# PMP Exam Simulator 2026
 
-# Run and deploy your AI Studio app
+Professional PMBOK 8th Edition & Agile/Hybrid PMP Exam Simulator with interactive AI coaching and
+full 180-question mock exams.
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/b36b1d86-893f-45bf-afd4-71545e11ca07
+Live app: https://pmp-simulator-2026.onrender.com
 
 ## Run Locally
 
