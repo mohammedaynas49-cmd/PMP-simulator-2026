@@ -16,7 +16,7 @@ import DefinitionsSearchView from './DefinitionsSearchView';
 import MatchingExerciseView from './MatchingExerciseView';
 import ExamView from './ExamView';
 import DomainPracticeView from './DomainPracticeView';
-import { AlertTriangle, Bot, Lock, Loader2 } from 'lucide-react';
+import { AlertTriangle, Bot, Lock, Loader2, Menu } from 'lucide-react';
 
 interface DashboardProps {
   user?: any;
@@ -74,6 +74,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
   
   // App states
   const [selectedMode, setSelectedMode] = useState<'domain' | 'exam' | 'book' | 'admin' | 'definitions' | 'matching'>('domain');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedDomains, setSelectedDomains] = useState<PMPDomain[]>([]);
   
   // Custom training preference states
@@ -970,7 +971,30 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-indigo-50/40 via-slate-50 to-violet-50/50 overflow-hidden text-slate-800" id="dashboard_panel">
+    <div className="flex flex-col md:flex-row h-screen bg-gradient-to-br from-indigo-50/40 via-slate-50 to-violet-50/50 overflow-hidden text-slate-800" id="dashboard_panel">
+
+      {/* Mobile-only top bar: hamburger toggle for the off-canvas sidebar */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-indigo-100 bg-white/90 backdrop-blur shrink-0 z-20" id="mobile_top_bar">
+        <button
+          id="mobile_menu_btn"
+          onClick={() => setIsMobileSidebarOpen(true)}
+          className="p-2 -ml-2 rounded-lg text-slate-600 hover:bg-slate-100 cursor-pointer"
+          aria-label={language === 'FR' ? 'Ouvrir le menu' : 'Open menu'}
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        <span className="text-sm font-black text-indigo-950">PMP Exam Simulator 2026</span>
+        <div className="w-10" />
+      </div>
+
+      {/* Backdrop behind the off-canvas sidebar on mobile */}
+      {isMobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          onClick={() => setIsMobileSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Sidebar Navigation */}
       <Sidebar
@@ -978,6 +1002,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         selectedMode={selectedMode}
         setSelectedMode={(mode) => {
           setSelectedMode(mode);
+          setIsMobileSidebarOpen(false);
           if (mode === 'exam' && examQuestions.length === 0) {
             // Scaffold initial exam
           }
@@ -993,6 +1018,8 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         language={language}
         setLanguage={setLanguage}
         isAdmin={isAdmin}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Panel Viewport with light academic palette */}

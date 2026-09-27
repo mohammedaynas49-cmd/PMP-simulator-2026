@@ -12,7 +12,8 @@ import {
   User as UserIcon,
   Filter,
   Search,
-  Shuffle
+  Shuffle,
+  X
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 
@@ -31,6 +32,8 @@ interface SidebarProps {
   language?: 'EN' | 'FR';
   setLanguage?: (lang: 'EN' | 'FR') => void;
   isAdmin?: boolean;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 const t = {
@@ -102,7 +105,9 @@ export default function Sidebar({
   totalExamQuestions = 180,
   language = 'EN',
   setLanguage,
-  isAdmin = false
+  isAdmin = false,
+  isMobileOpen = false,
+  onCloseMobile
 }: SidebarProps) {
   
   // Calculate specific totals
@@ -150,24 +155,37 @@ export default function Sidebar({
   };
   
   return (
-    <aside className="w-80 bg-gradient-to-b from-white via-indigo-50/10 to-violet-50/20 border-r border-indigo-100 text-slate-800 flex flex-col h-full shrink-0 outline-none shadow-sm" id="sidebar_main">
+    <aside
+      className={`fixed md:static inset-y-0 left-0 z-40 w-80 max-w-[85vw] bg-white bg-gradient-to-b from-white via-indigo-50/10 to-violet-50/20 border-r border-indigo-100 text-slate-800 flex flex-col h-full shrink-0 outline-none shadow-sm transform transition-transform duration-300 ease-in-out md:translate-x-0 ${
+        isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}
+      id="sidebar_main"
+    >
       {/* Header Profile Info */}
       <div className="p-6 border-b border-indigo-50 flex flex-col gap-4" id="sidebar_profile">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white font-black ring-4 ring-indigo-550/10 shadow-md overflow-hidden">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white font-black ring-4 ring-indigo-550/10 shadow-md overflow-hidden shrink-0">
             {user?.photoURL ? (
               <img src={user.photoURL} alt="profile" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             ) : (
               <UserIcon className="w-5 h-5 text-white" />
             )}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h3 className="text-sm font-black text-indigo-950 truncate leading-tight">{user?.displayName || user?.email?.split('@')[0] || texts.candidateLogin}</h3>
             <span className="text-[11px] text-violet-600 font-mono tracking-wider flex items-center gap-1.5 mt-1 font-extrabold bg-violet-50 px-2 py-0.5 rounded-md inline-flex">
               <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-ping"></span>
               {texts.pmpCandidate}
             </span>
           </div>
+          <button
+            id="sidebar_close_btn"
+            onClick={onCloseMobile}
+            className="md:hidden p-1.5 -mr-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer shrink-0"
+            aria-label={language === 'FR' ? 'Fermer le menu' : 'Close menu'}
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Small in-sidebar Language Switches */}
