@@ -261,7 +261,14 @@ async function startServer() {
   // directly (inline scripts/styles during dev, hashed-but-uninventoried asset URLs in
   // production) - a default CSP would break the app outright rather than add real protection
   // without a proper per-asset policy, which is out of scope here.
-  app.use(helmet({ contentSecurityPolicy: false }));
+  // `crossOriginOpenerPolicy: 'same-origin-allow-popups'` overrides helmet's default
+  // `same-origin`, which severs `window.opener` between this page and the Google sign-in popup
+  // it opens via `signInWithPopup` - Firebase then can't detect the popup closing normally and
+  // throws `auth/popup-closed-by-user` even when the candidate actually completed sign-in.
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }
+  }));
 
   app.use(express.json());
 
