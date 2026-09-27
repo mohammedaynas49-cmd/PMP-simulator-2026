@@ -105,14 +105,13 @@ export default function App() {
       )}
       
       {!user ? (
-        <AuthScreen 
+        <AuthScreen
           onAuthSuccess={(guestUser) => {
             if (guestUser) {
               setUser(guestUser);
             }
-          }} 
-          language={language} 
-          setLanguage={handleSetLanguage} 
+          }}
+          language={language}
         />
       ) : (
         <Dashboard 

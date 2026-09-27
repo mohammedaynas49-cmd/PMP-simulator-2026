@@ -6,7 +6,6 @@ import { Award, ShieldCheck, Sparkles, Globe } from 'lucide-react';
 interface AuthScreenProps {
   onAuthSuccess: (guestUser?: any) => void;
   language: 'EN' | 'FR';
-  setLanguage: (lang: 'EN' | 'FR') => void;
 }
 
 const t = {
@@ -42,7 +41,7 @@ const t = {
   }
 };
 
-export default function AuthScreen({ onAuthSuccess, language, setLanguage }: AuthScreenProps) {
+export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,26 +99,6 @@ export default function AuthScreen({ onAuthSuccess, language, setLanguage }: Aut
       <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-pink-350/20 blur-3xl animate-pulse" />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-amber-250/20 blur-3xl" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#6366f108_1px,transparent_1px),linear-gradient(to_bottom,#6366f108_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
-
-      {/* Language Switcher Float Banner bar */}
-      <div className="absolute top-6 right-6 z-20 flex bg-white/90 backdrop-blur-md border border-indigo-100 p-1.5 rounded-2xl text-xs gap-1.5 shadow-md" id="auth_language_switcher">
-        <button
-          onClick={() => setLanguage('EN')}
-          className={`px-3.5 py-2 rounded-xl font-extrabold font-mono transition-all duration-200 cursor-pointer ${
-            language === 'EN' ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105' : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          English
-        </button>
-        <button
-          onClick={() => setLanguage('FR')}
-          className={`px-3.5 py-2 rounded-xl font-extrabold font-mono transition-all duration-200 cursor-pointer ${
-            language === 'FR' ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105' : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          Français
-        </button>
-      </div>
 
       {/* Auth Card */}
       <div className="w-full max-w-md bg-white/95 backdrop-blur-md border border-white/60 rounded-[2.5rem] p-8 sm:p-9 shadow-2xl space-y-8 relative z-10 transition-all duration-300 hover:shadow-indigo-100/40">
