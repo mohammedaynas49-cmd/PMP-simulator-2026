@@ -67,10 +67,10 @@ async function main() {
   // locked out of the whole app until an admin approves it - that flow itself is covered by
   // admin-panel-test.mjs step 6. This suite is about the rest of the app's engine (question
   // generation, exam flow, matching exercise, etc.), so approve AND promote the fresh session
-  // directly via the Admin SDK rather than re-testing that flow here. Domain Practice / Full 180
-  // Mock Exam are admin-only (see Sidebar.tsx) since candidates were restricted to Extracted
-  // Questions only - promoting to admin is what keeps steps 3-9 below valid; the genuinely
-  // non-admin-restricted view is covered separately in step 12.
+  // directly via the Admin SDK rather than re-testing that flow here. Promoting to admin also
+  // means this main flow additionally exercises the admin-only Question Generation Source picker
+  // inside Domain Practice - the genuinely non-admin view (same sidebar, but that picker hidden
+  // and generation restricted to documents-only) is covered separately in step 12.
   await page.waitForSelector("#access_locked_screen", { timeout: 15000 });
   const freshSessions = await db.collection("sessions").get();
   await Promise.all(freshSessions.docs.map((d) => d.ref.update({ accessStatus: "granted", role: "admin" })));
@@ -249,7 +249,7 @@ async function main() {
   await enBtn.click();
   await page.waitForTimeout(500);
 
-  logStep("12. A genuinely non-admin candidate is restricted to Extracted Questions only");
+  logStep("12. A genuinely non-admin candidate sees the same sidebar as admin, except the Domain Practice generation-source picker");
   // Separate browser context (new page from Browser, not the same context) so this session shares
   // no cookies/storage with the admin session tested above - a real second guest account.
   const candidatePage = await browser.newPage({ viewport: { width: 1400, height: 950 } });
@@ -259,19 +259,28 @@ async function main() {
   const candidateSessions = await db.collection("sessions").where("accessStatus", "==", "pending").get();
   await Promise.all(candidateSessions.docs.map((d) => d.ref.update({ accessStatus: "granted" })));
   await candidatePage.reload({ waitUntil: "domcontentloaded" });
-  await candidatePage.waitForSelector("#view_extracted_questions", { timeout: 15000 });
-  await candidatePage.screenshot({ path: `${OUT_DIR}/12_candidate_extracted_default.png` });
+  // Candidates land on Domain Practice by default, same as admin - the sidebar itself is
+  // unrestricted; only the generation-source picker inside it differs (checked below).
+  await candidatePage.waitForSelector("#sidebar_main", { timeout: 15000 });
+  await candidatePage.screenshot({ path: `${OUT_DIR}/12_candidate_domain_default.png` });
 
   const hasDomainBtn = await candidatePage.locator("#mode_domain_btn").count();
   const hasExamBtn = await candidatePage.locator("#mode_exam_btn").count();
   const hasExtractedBtn = await candidatePage.locator("#mode_extracted_btn").count();
-  console.log("Candidate sidebar: mode_domain_btn present (should be 0):", hasDomainBtn);
-  console.log("Candidate sidebar: mode_exam_btn present (should be 0):", hasExamBtn);
+  console.log("Candidate sidebar: mode_domain_btn present (should be 1):", hasDomainBtn);
+  console.log("Candidate sidebar: mode_exam_btn present (should be 1):", hasExamBtn);
   console.log("Candidate sidebar: mode_extracted_btn present (should be 1):", hasExtractedBtn);
-  if (hasDomainBtn !== 0 || hasExamBtn !== 0 || hasExtractedBtn !== 1) {
+  if (hasDomainBtn !== 1 || hasExamBtn !== 1 || hasExtractedBtn !== 1) {
     consoleErrors.push(
-      `Candidate sidebar restriction failed: domain=${hasDomainBtn} exam=${hasExamBtn} extracted=${hasExtractedBtn}`
+      `Candidate sidebar should match admin's: domain=${hasDomainBtn} exam=${hasExamBtn} extracted=${hasExtractedBtn}`
     );
+  }
+
+  // The generation-source picker itself must be hidden for a non-admin candidate.
+  const candidateGenSourcePicker = await candidatePage.getByText(/Question Generation Source/i).count();
+  console.log("Candidate: Question Generation Source picker visible (should be 0):", candidateGenSourcePicker);
+  if (candidateGenSourcePicker !== 0) {
+    consoleErrors.push("Candidate should not see the Question Generation Source picker (restricted to documents-only)");
   }
   await candidatePage.close();
 

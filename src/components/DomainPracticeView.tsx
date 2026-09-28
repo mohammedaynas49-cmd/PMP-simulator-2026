@@ -130,58 +130,73 @@ export default function DomainPracticeView({
                 </div>
               </div>
 
-              {/* Generation Source Filter */}
-              <div className="md:col-span-2 space-y-3 pb-6 border-b border-dashed border-indigo-100">
-                <label className="block text-sm font-black text-indigo-950">
-                  ⚙️ {language === 'FR' ? "Source de Génération des Questions" : "Question Generation Source"}
-                </label>
-                <p className="text-xs text-slate-400 font-bold">
-                  {language === 'FR'
-                    ? "Sélectionnez comment l'application doit générer vos questions d'entraînement."
-                    : "Choose how the application should generate your PMP practice questions."}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPrefGenerationSource('docs')}
-                    className={`py-4 px-5 rounded-2xl text-xs sm:text-sm font-black border transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
-                      prefGenerationSource === 'docs'
-                        ? 'bg-amber-50 border-amber-300 text-amber-950 shadow-xxs'
-                        : 'bg-slate-50/50 border-slate-200 text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className="text-lg">📚</span>
-                    <span className="text-center">{language === 'FR' ? "1. Documents uniquement" : "1. Using the docs solely"}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">{language === 'FR' ? "Seulement vos livres/glossaire" : "Only your books/glossary"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPrefGenerationSource('ai')}
-                    className={`py-4 px-5 rounded-2xl text-xs sm:text-sm font-black border transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
-                      prefGenerationSource === 'ai'
-                        ? 'bg-indigo-50 border-indigo-300 text-indigo-950 shadow-xxs'
-                        : 'bg-slate-50/50 border-slate-200 text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className="text-lg">🧠</span>
-                    <span className="text-center">{language === 'FR' ? "2. IA uniquement" : "2. Using AI"}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">{language === 'FR' ? "Connaissances générales de l'IA" : "AI's general knowledge"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPrefGenerationSource('combine')}
-                    className={`py-4 px-5 rounded-2xl text-xs sm:text-sm font-black border transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
-                      prefGenerationSource === 'combine'
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xxs'
-                        : 'bg-slate-50/50 border-slate-200 text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className="text-lg">🔮</span>
-                    <span className="text-center">{language === 'FR' ? "3. Combiner (Docs + IA)" : "3. Combine (Docs + AI)"}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">{language === 'FR' ? "Approche hybride ancrée" : "Grounded hybrid approach"}</span>
-                  </button>
+              {/* Generation Source Filter - admin-only choice. Non-admin candidates are always
+                  restricted to documents-only generation (enforced again server-request-side in
+                  Dashboard.tsx's fetchNewQuestion, regardless of this UI). */}
+              {isAdmin ? (
+                <div className="md:col-span-2 space-y-3 pb-6 border-b border-dashed border-indigo-100">
+                  <label className="block text-sm font-black text-indigo-950">
+                    ⚙️ {language === 'FR' ? "Source de Génération des Questions" : "Question Generation Source"}
+                  </label>
+                  <p className="text-xs text-slate-400 font-bold">
+                    {language === 'FR'
+                      ? "Sélectionnez comment l'application doit générer vos questions d'entraînement."
+                      : "Choose how the application should generate your PMP practice questions."}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPrefGenerationSource('docs')}
+                      className={`py-4 px-5 rounded-2xl text-xs sm:text-sm font-black border transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
+                        prefGenerationSource === 'docs'
+                          ? 'bg-amber-50 border-amber-300 text-amber-950 shadow-xxs'
+                          : 'bg-slate-50/50 border-slate-200 text-slate-500 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="text-lg">📚</span>
+                      <span className="text-center">{language === 'FR' ? "1. Documents uniquement" : "1. Using the docs solely"}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">{language === 'FR' ? "Seulement vos livres/glossaire" : "Only your books/glossary"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPrefGenerationSource('ai')}
+                      className={`py-4 px-5 rounded-2xl text-xs sm:text-sm font-black border transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
+                        prefGenerationSource === 'ai'
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-950 shadow-xxs'
+                          : 'bg-slate-50/50 border-slate-200 text-slate-500 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="text-lg">🧠</span>
+                      <span className="text-center">{language === 'FR' ? "2. IA uniquement" : "2. Using AI"}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">{language === 'FR' ? "Connaissances générales de l'IA" : "AI's general knowledge"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPrefGenerationSource('combine')}
+                      className={`py-4 px-5 rounded-2xl text-xs sm:text-sm font-black border transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
+                        prefGenerationSource === 'combine'
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xxs'
+                          : 'bg-slate-50/50 border-slate-200 text-slate-500 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="text-lg">🔮</span>
+                      <span className="text-center">{language === 'FR' ? "3. Combiner (Docs + IA)" : "3. Combine (Docs + AI)"}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">{language === 'FR' ? "Approche hybride ancrée" : "Grounded hybrid approach"}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="md:col-span-2 pb-6 border-b border-dashed border-indigo-100">
+                  <div className="flex items-center gap-2.5 bg-amber-50/60 border border-amber-200/60 rounded-2xl px-4 py-3">
+                    <span className="text-lg">📚</span>
+                    <span className="text-xs text-amber-900 font-bold">
+                      {language === 'FR'
+                        ? "Vos questions sont générées uniquement à partir des documents PMP téléversés par votre administrateur."
+                        : "Your questions are generated only from the PMP documents your administrator uploaded."}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Domain Filter */}
               <div className="space-y-3">

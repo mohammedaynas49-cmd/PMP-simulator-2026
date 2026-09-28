@@ -394,17 +394,6 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     fetchUserSession();
   }, [user]);
 
-  // Domain Practice / Full 180 Mock Exam are admin-only (see Sidebar.tsx) - a non-admin candidate
-  // would otherwise still land on the 'domain' default with its sidebar button hidden. Only
-  // redirects away from that specific default, never overrides a mode the candidate deliberately
-  // picked afterward.
-  useEffect(() => {
-    if (isProfileLoaded && !isAdmin && selectedMode === 'domain') {
-      setSelectedMode('extracted');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isProfileLoaded, isAdmin]);
-
   // Active Timer to calculate duration of utilization (cumulative spent seconds)
   useEffect(() => {
     if (!user) return;
@@ -582,7 +571,10 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
            language: language,
            sessionCompletedCount: currentSessionCount,
            excludeIds: excludeIds,
-            generationSource: prefGenerationSource,
+           // Non-admin candidates are restricted to documents-only generation (see
+           // DomainPracticeView.tsx, which hides the source picker for them) - enforced here too
+           // so the restriction holds regardless of client state.
+           generationSource: isAdmin ? prefGenerationSource : 'docs',
            questionType: prefQuestionType
          })
        });
