@@ -82,7 +82,7 @@ interface BookCompanionViewProps {
   setExtractedExamIndex: React.Dispatch<React.SetStateAction<number>>;
   extractedExamTimeRemaining: number;
   extractedExamScore: number | null;
-  startExtractedExam: () => void;
+  startExtractedExam: (questions: PMPQuestion[]) => void;
   submitExtractedExam: () => void;
   exitExtractedExam: () => void;
 }
@@ -465,7 +465,7 @@ export default function BookCompanionView({
                     {extractedQuestions.length > 0 && (
                       <button
                         id="start_extracted_exam_btn"
-                        onClick={startExtractedExam}
+                        onClick={() => startExtractedExam(extractedQuestions)}
                         className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md hover:scale-102 active:scale-100 transition-all flex items-center gap-2 cursor-pointer shrink-0"
                       >
                         <Clock className="w-4 h-4 text-white" />

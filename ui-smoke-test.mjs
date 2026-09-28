@@ -65,11 +65,15 @@ async function main() {
   await guestBtn.click();
   // Every brand-new account starts 'pending' (see the Candidate Directory approval model) and is
   // locked out of the whole app until an admin approves it - that flow itself is covered by
-  // admin-panel-test.mjs step 6. This suite is about the rest of the candidate experience, so
-  // approve the fresh session directly via the Admin SDK rather than re-testing approval here.
+  // admin-panel-test.mjs step 6. This suite is about the rest of the app's engine (question
+  // generation, exam flow, matching exercise, etc.), so approve AND promote the fresh session
+  // directly via the Admin SDK rather than re-testing that flow here. Domain Practice / Full 180
+  // Mock Exam are admin-only (see Sidebar.tsx) since candidates were restricted to Extracted
+  // Questions only - promoting to admin is what keeps steps 3-9 below valid; the genuinely
+  // non-admin-restricted view is covered separately in step 12.
   await page.waitForSelector("#access_locked_screen", { timeout: 15000 });
   const freshSessions = await db.collection("sessions").get();
-  await Promise.all(freshSessions.docs.map((d) => d.ref.update({ accessStatus: "granted" })));
+  await Promise.all(freshSessions.docs.map((d) => d.ref.update({ accessStatus: "granted", role: "admin" })));
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForSelector("#sidebar_main", { timeout: 15000 });
   await page.screenshot({ path: `${OUT_DIR}/02_dashboard_domain_mode.png` });
@@ -244,6 +248,32 @@ async function main() {
   const enBtn = page.locator("#sidebar_main").getByRole("button", { name: "EN", exact: true });
   await enBtn.click();
   await page.waitForTimeout(500);
+
+  logStep("12. A genuinely non-admin candidate is restricted to Extracted Questions only");
+  // Separate browser context (new page from Browser, not the same context) so this session shares
+  // no cookies/storage with the admin session tested above - a real second guest account.
+  const candidatePage = await browser.newPage({ viewport: { width: 1400, height: 950 } });
+  await candidatePage.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+  await candidatePage.locator("#guest_signin_btn").click();
+  await candidatePage.waitForSelector("#access_locked_screen", { timeout: 15000 });
+  const candidateSessions = await db.collection("sessions").where("accessStatus", "==", "pending").get();
+  await Promise.all(candidateSessions.docs.map((d) => d.ref.update({ accessStatus: "granted" })));
+  await candidatePage.reload({ waitUntil: "domcontentloaded" });
+  await candidatePage.waitForSelector("#view_extracted_questions", { timeout: 15000 });
+  await candidatePage.screenshot({ path: `${OUT_DIR}/12_candidate_extracted_default.png` });
+
+  const hasDomainBtn = await candidatePage.locator("#mode_domain_btn").count();
+  const hasExamBtn = await candidatePage.locator("#mode_exam_btn").count();
+  const hasExtractedBtn = await candidatePage.locator("#mode_extracted_btn").count();
+  console.log("Candidate sidebar: mode_domain_btn present (should be 0):", hasDomainBtn);
+  console.log("Candidate sidebar: mode_exam_btn present (should be 0):", hasExamBtn);
+  console.log("Candidate sidebar: mode_extracted_btn present (should be 1):", hasExtractedBtn);
+  if (hasDomainBtn !== 0 || hasExamBtn !== 0 || hasExtractedBtn !== 1) {
+    consoleErrors.push(
+      `Candidate sidebar restriction failed: domain=${hasDomainBtn} exam=${hasExamBtn} extracted=${hasExtractedBtn}`
+    );
+  }
+  await candidatePage.close();
 
   console.log("\n--- Console errors captured during the whole run ---");
   if (consoleErrors.length === 0) {

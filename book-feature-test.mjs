@@ -300,7 +300,9 @@ for (const upload of [pmbok8Upload, pmbok7Upload, conflictUpload]) {
 console.log("\n=== 8. Open the Extracted Questions tab (document-extraction feature) ===");
 await page.locator("#mode_book_btn").click();
 await page.waitForSelector("#view_book_companion", { timeout: 10000 });
-await page.getByRole("button", { name: /Extracted Questions/i }).click();
+// Scoped to the Study Books panel itself - the sidebar's own always-visible "Extracted Questions"
+// entry (#mode_extracted_btn, the candidate-facing cross-book view) has the same accessible name.
+await page.locator("#view_book_companion").getByRole("button", { name: /Extracted Questions/i }).click();
 await page.waitForTimeout(1500); // let the background scan's status settle (no Gemini key locally -> skipped_offline)
 await page.screenshot({ path: "smoke-screens/emu_book_extracted_tab.png", fullPage: true });
 const extractedTabText = await page.locator("#view_book_companion").textContent();
@@ -343,7 +345,9 @@ await page.locator("#mode_book_btn").click();
 await page.waitForSelector("#view_book_companion", { timeout: 10000 });
 await page.getByText(testDoc, { exact: false }).first().click();
 await page.waitForTimeout(300);
-await page.getByRole("button", { name: /Extracted Questions/i }).click();
+// Scoped to the Study Books panel itself - the sidebar's own always-visible "Extracted Questions"
+// entry (#mode_extracted_btn, the candidate-facing cross-book view) has the same accessible name.
+await page.locator("#view_book_companion").getByRole("button", { name: /Extracted Questions/i }).click();
 await page.waitForTimeout(1000);
 
 const startExamBtn = page.locator("#start_extracted_exam_btn");

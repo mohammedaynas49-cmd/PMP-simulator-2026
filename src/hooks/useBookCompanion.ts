@@ -37,9 +37,12 @@ export function useBookCompanion(language: 'EN' | 'FR', sessionCompletedCount: n
 
   const SECONDS_PER_EXTRACTED_EXAM_QUESTION = 90;
 
-  const startExtractedExam = () => {
-    if (extractedQuestions.length === 0) return;
-    const shuffled = [...extractedQuestions];
+  // Parametrized on the source question list so both the admin's per-book extracted-questions tab
+  // (BookCompanionView) and the candidate's cross-book Extracted Questions view
+  // (ExtractedQuestionsView) can drive the same timed-exam state without duplicating it.
+  const startExtractedExam = (questions: PMPQuestion[]) => {
+    if (questions.length === 0) return;
+    const shuffled = [...questions];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -156,6 +159,47 @@ export function useBookCompanion(language: 'EN' | 'FR', sessionCompletedCount: n
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeBookTab, selectedBookId, selectedBookExtractionStatus]);
+
+  // Cross-book extracted questions, for the always-visible candidate "Extracted Questions" view
+  // (ExtractedQuestionsView) - distinct from extractedQuestions above, which stays scoped to
+  // whichever single book the admin has selected in the Study Books tab.
+  const [allExtractedQuestions, setAllExtractedQuestions] = useState<PMPQuestion[]>([]);
+  const [isLoadingAllExtracted, setIsLoadingAllExtracted] = useState<boolean>(false);
+  const [allExtractedIndex, setAllExtractedIndex] = useState<number>(0);
+  const [allExtractedAnsweredMap, setAllExtractedAnsweredMap] = useState<{ [qId: string]: string }>({});
+
+  const fetchAllExtractedQuestions = async (bookList: BookMeta[]) => {
+    const candidateBooks = bookList.filter(b => (b.extractedQuestionsCount || 0) > 0);
+    if (candidateBooks.length === 0) {
+      setAllExtractedQuestions([]);
+      return;
+    }
+    setIsLoadingAllExtracted(true);
+    try {
+      const results = await Promise.all(
+        candidateBooks.map(b =>
+          authFetch(`/api/books/${b.id}/extracted-questions`)
+            .then(res => res.json())
+            .then(data => (Array.isArray(data.questions) ? data.questions : []))
+            .catch(() => [])
+        )
+      );
+      setAllExtractedQuestions(results.flat());
+      setAllExtractedIndex(0);
+    } finally {
+      setIsLoadingAllExtracted(false);
+    }
+  };
+
+  // Any book still mid-scan means more extracted questions could still show up - keep this
+  // cross-book list in sync with the same `books` state the per-book effect above already
+  // refreshes on a 4s interval while a scan is pending.
+  useEffect(() => {
+    if (selectedMode === 'extracted') {
+      fetchAllExtractedQuestions(books);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMode, books]);
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
@@ -303,6 +347,12 @@ export function useBookCompanion(language: 'EN' | 'FR', sessionCompletedCount: n
     extractedExamScore,
     startExtractedExam,
     submitExtractedExam,
-    exitExtractedExam
+    exitExtractedExam,
+    allExtractedQuestions,
+    isLoadingAllExtracted,
+    allExtractedIndex,
+    setAllExtractedIndex,
+    allExtractedAnsweredMap,
+    setAllExtractedAnsweredMap
   };
 }

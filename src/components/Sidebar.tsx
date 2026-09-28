@@ -13,14 +13,15 @@ import {
   Filter,
   Search,
   Shuffle,
-  X
+  X,
+  ListChecks
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface SidebarProps {
   user: User | null;
-  selectedMode: 'domain' | 'exam' | 'book' | 'admin' | 'definitions' | 'matching';
-  setSelectedMode: (mode: 'domain' | 'exam' | 'book' | 'admin' | 'definitions' | 'matching') => void;
+  selectedMode: 'domain' | 'exam' | 'book' | 'admin' | 'definitions' | 'matching' | 'extracted';
+  setSelectedMode: (mode: 'domain' | 'exam' | 'book' | 'admin' | 'definitions' | 'matching' | 'extracted') => void;
   selectedDomains: PMPDomain[];
   toggleDomain: (domain: PMPDomain) => void;
   mastery: MasteryMatrix;
@@ -43,6 +44,7 @@ const t = {
     simulationMode: "Simulation Mode",
     domainPractice: "Domain Practice",
     fullMock: "Full 180 Mock Exam",
+    extractedQuestions: "Extracted Questions",
     matchingExercise: "Terminology Matching",
     definitionsSearch: "PMP Definitions",
     bookCompanion: "PMP Study Books",
@@ -69,6 +71,7 @@ const t = {
     simulationMode: "Mode de Simulation",
     domainPractice: "Pratique par Domaine",
     fullMock: "Examen Blanc (180 Q)",
+    extractedQuestions: "Questions Extraites",
     matchingExercise: "Association de Termes",
     definitionsSearch: "Définitions PMP",
     bookCompanion: "Livres d'Étude PMP",
@@ -218,35 +221,54 @@ export default function Sidebar({
             <Compass className="w-3.5 h-3.5 text-indigo-400" /> {texts.simulationMode}
           </h4>
           <div className="space-y-2">
+            {isAdmin && (
+              <button
+                id="mode_domain_btn"
+                onClick={() => setSelectedMode('domain')}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                  selectedMode === 'domain'
+                    ? 'bg-gradient-to-r from-violet-50 to-indigo-50/80 text-violet-950 border-2 border-violet-300 font-extrabold shadow-md'
+                    : 'text-slate-500 hover:text-slate-950 hover:bg-slate-50 border border-transparent'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <BookOpen className={`w-4 h-4 ${selectedMode === 'domain' ? 'text-violet-650' : 'text-slate-400'}`} />
+                  <span className="text-sm">{texts.domainPractice}</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-600 font-mono font-black shadow-xxs">ECO</span>
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                id="mode_exam_btn"
+                onClick={() => setSelectedMode('exam')}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                  selectedMode === 'exam'
+                    ? 'bg-gradient-to-r from-amber-50 to-rose-50/80 text-rose-950 border-2 border-amber-300 font-extrabold shadow-md'
+                    : 'text-slate-500 hover:text-slate-950 hover:bg-slate-50 border border-transparent'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Award className={`w-4 h-4 ${selectedMode === 'exam' ? 'text-rose-600' : 'text-slate-400'}`} />
+                  <span className="text-sm">{texts.fullMock}</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-rose-200 text-rose-550 font-mono font-black shadow-xxs">230m</span>
+              </button>
+            )}
             <button
-              id="mode_domain_btn"
-              onClick={() => setSelectedMode('domain')}
+              id="mode_extracted_btn"
+              onClick={() => setSelectedMode('extracted')}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
-                selectedMode === 'domain'
-                  ? 'bg-gradient-to-r from-violet-50 to-indigo-50/80 text-violet-950 border-2 border-violet-300 font-extrabold shadow-md'
+                selectedMode === 'extracted'
+                  ? 'bg-gradient-to-r from-indigo-50 to-violet-50/80 text-indigo-950 border-2 border-indigo-300 font-extrabold shadow-md'
                   : 'text-slate-500 hover:text-slate-950 hover:bg-slate-50 border border-transparent'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <BookOpen className={`w-4 h-4 ${selectedMode === 'domain' ? 'text-violet-650' : 'text-slate-400'}`} />
-                <span className="text-sm">{texts.domainPractice}</span>
+                <ListChecks className={`w-4 h-4 ${selectedMode === 'extracted' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <span className="text-sm">{texts.extractedQuestions}</span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-600 font-mono font-black shadow-xxs">ECO</span>
-            </button>
-            <button
-              id="mode_exam_btn"
-              onClick={() => setSelectedMode('exam')}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer ${
-                selectedMode === 'exam'
-                  ? 'bg-gradient-to-r from-amber-50 to-rose-50/80 text-rose-950 border-2 border-amber-300 font-extrabold shadow-md'
-                  : 'text-slate-500 hover:text-slate-950 hover:bg-slate-50 border border-transparent'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Award className={`w-4 h-4 ${selectedMode === 'exam' ? 'text-rose-600' : 'text-slate-400'}`} />
-                <span className="text-sm">{texts.fullMock}</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-rose-200 text-rose-550 font-mono font-black shadow-xxs">230m</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-indigo-200 text-indigo-600 font-mono font-black shadow-xxs">📄</span>
             </button>
             <button
               id="mode_matching_btn"

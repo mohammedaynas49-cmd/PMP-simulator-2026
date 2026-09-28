@@ -14,6 +14,7 @@ import BookCompanionView from './BookCompanionView';
 import AdminPanelView from './AdminPanelView';
 import DefinitionsSearchView from './DefinitionsSearchView';
 import MatchingExerciseView from './MatchingExerciseView';
+import ExtractedQuestionsView from './ExtractedQuestionsView';
 import ExamView from './ExamView';
 import DomainPracticeView from './DomainPracticeView';
 import { AlertTriangle, Bot, Lock, Loader2, Menu } from 'lucide-react';
@@ -73,7 +74,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
   const texts = t[language];
   
   // App states
-  const [selectedMode, setSelectedMode] = useState<'domain' | 'exam' | 'book' | 'admin' | 'definitions' | 'matching'>('domain');
+  const [selectedMode, setSelectedMode] = useState<'domain' | 'exam' | 'book' | 'admin' | 'definitions' | 'matching' | 'extracted'>('domain');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedDomains, setSelectedDomains] = useState<PMPDomain[]>([]);
   
@@ -132,7 +133,13 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     extractedExamScore,
     startExtractedExam,
     submitExtractedExam,
-    exitExtractedExam
+    exitExtractedExam,
+    allExtractedQuestions,
+    isLoadingAllExtracted,
+    allExtractedIndex,
+    setAllExtractedIndex,
+    allExtractedAnsweredMap,
+    setAllExtractedAnsweredMap
   } = useBookCompanion(language, sessionCompletedCount, selectedMode);
 
   // Loaded Question states
@@ -386,6 +393,17 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
 
     fetchUserSession();
   }, [user]);
+
+  // Domain Practice / Full 180 Mock Exam are admin-only (see Sidebar.tsx) - a non-admin candidate
+  // would otherwise still land on the 'domain' default with its sidebar button hidden. Only
+  // redirects away from that specific default, never overrides a mode the candidate deliberately
+  // picked afterward.
+  useEffect(() => {
+    if (isProfileLoaded && !isAdmin && selectedMode === 'domain') {
+      setSelectedMode('extracted');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isProfileLoaded, isAdmin]);
 
   // Active Timer to calculate duration of utilization (cumulative spent seconds)
   useEffect(() => {
@@ -1195,6 +1213,35 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         {/* Terminology Matching exercise - available to every candidate, not just admins */}
         {selectedMode === 'matching' && (
           <MatchingExerciseView language={language} />
+        )}
+
+        {/* Extracted Questions - every candidate's question source, aggregated across every
+            uploaded book (never AI-generated); Domain Practice / Full 180 Mock Exam stay
+            admin-only, see Sidebar.tsx. */}
+        {selectedMode === 'extracted' && (
+          <ExtractedQuestionsView
+            language={language}
+            isAdmin={isAdmin}
+            questions={allExtractedQuestions}
+            isLoading={isLoadingAllExtracted}
+            index={allExtractedIndex}
+            setIndex={setAllExtractedIndex}
+            answeredMap={allExtractedAnsweredMap}
+            setAnsweredMap={setAllExtractedAnsweredMap}
+            setSessionCompletedCount={setSessionCompletedCount}
+            examActive={extractedExamActive}
+            examSubmitted={extractedExamSubmitted}
+            examQuestions={extractedExamQuestions}
+            examAnswers={extractedExamAnswers}
+            setExamAnswers={setExtractedExamAnswers}
+            examIndex={extractedExamIndex}
+            setExamIndex={setExtractedExamIndex}
+            examTimeRemaining={extractedExamTimeRemaining}
+            examScore={extractedExamScore}
+            startExam={startExtractedExam}
+            submitExam={submitExtractedExam}
+            exitExam={exitExtractedExam}
+          />
         )}
 
         {/* Dynamic Admin Supervision Portal & Candidate Log Sheet */}
