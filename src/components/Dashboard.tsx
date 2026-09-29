@@ -101,6 +101,11 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
   // than randomly picking among every case study the candidate has ever touched, in any past
   // session (see the server-side comment in /api/questions/generate).
   const [activeCaseStudyId, setActiveCaseStudyId] = useState<string | null>(null);
+  // True once the server has confirmed there is no real case study left to serve (either no
+  // dedicated file was uploaded, or every one of its case studies has been fully answered) - lets
+  // the completion screen offer "exit this mode" instead of silently handing back a generic
+  // AI-drafted situational question mislabeled as a case study.
+  const [caseStudyPoolExhausted, setCaseStudyPoolExhausted] = useState<boolean>(false);
 
   // Book Study Companion: state + handlers live in useBookCompanion (shared identically by the
   // Study Books tab and the Admin Control Panel's "Exam Books & AI Study" tab). Destructured
@@ -541,10 +546,27 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     setDomainSessionStartedAt(Date.now());
     setDomainSessionComplete(false);
     setActiveCaseStudyId(null);
+    setCaseStudyPoolExhausted(false);
     if (overrideDomains) {
       setSelectedDomains(overrideDomains);
     }
-    fetchNewQuestion(overrideDomains, customSub, customPh, customMeth);
+    // forceFreshSession=true: domainSessionAnswered was just reset above but React batches that
+    // update, so fetchNewQuestion (called synchronously in this same handler) would otherwise
+    // still read the OLD value via closure and wrongly conclude this isn't a fresh session start.
+    fetchNewQuestion(overrideDomains, customSub, customPh, customMeth, true);
+  };
+
+  // Once a case study's own question series is fully answered (domainSessionComplete, sized to
+  // that case study via case_study_total_questions - see fetchNewQuestion below), the candidate
+  // can ask for another one without leaving Case Studies mode or the preferences menu entirely.
+  // Stays in the same practice "sitting" (elapsed timer keeps running, domain/methodology
+  // selections untouched) - only resets what's specific to a single case study's series.
+  const handleStartNextCaseStudy = () => {
+    setDomainSessionAnswered(0);
+    setDomainSessionCorrect(0);
+    setDomainSessionComplete(false);
+    setActiveCaseStudyId(null);
+    fetchNewQuestion(undefined, undefined, undefined, undefined, true);
   };
 
   // Close and clean/reset the active training state completely back to preferences menu
@@ -565,6 +587,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     setDomainSessionStartedAt(null);
     setDomainSessionComplete(false);
     setActiveCaseStudyId(null);
+    setCaseStudyPoolExhausted(false);
   };
 
   // Generate / Fetch next target PMP question
@@ -572,7 +595,8 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     overrideDomains?: PMPDomain[],
     customSub?: string,
     customPh?: string,
-    customMeth?: string
+    customMeth?: string,
+    forceFreshSession?: boolean
   ) => {
     setIsLoadingNew(true);
     const activeDomains = overrideDomains || selectedDomains;
@@ -621,15 +645,14 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
 
     const currentSessionCount = overrideDomains ? 0 : sessionCompletedCount;
     const excludeIds = Object.keys(answeredMap);
-    // Reliable "is this the very first fetch of a session" signal - `overrideDomains` is only
-    // passed by the landing screen's single-click "Start Targeted Training" path, NOT by the
-    // more common sidebar-checkbox-then-explicit-Launch flow (handleLaunchDomainPractice calls
-    // fetchNewQuestion() with no arguments there), so it under-fires for freshDomainSession/
-    // target-count-override purposes below. handleLaunchDomainPractice always resets
-    // domainSessionAnswered to 0 right before calling this, and nothing can answer a question
-    // before the first one is even displayed, so domainSessionAnswered === 0 correctly identifies
-    // the first fetch of a session across BOTH launch paths.
-    const isFreshDomainSession = domainSessionAnswered === 0;
+    // Reliable "is this the very first fetch of a session" signal. Callers that just reset
+    // domainSessionAnswered to 0 in this same synchronous handler (handleLaunchDomainPractice,
+    // handleStartNextCaseStudy) pass forceFreshSession explicitly, since React batches that state
+    // update - reading domainSessionAnswered via closure here would still see its OLD value until
+    // the next render, not the fresh 0 that was just scheduled. Everywhere else (onNext, Force
+    // Regenerate), nothing resets it first, so domainSessionAnswered === 0 correctly reflects
+    // "nothing answered yet this session" on its own.
+    const isFreshDomainSession = forceFreshSession === true || domainSessionAnswered === 0;
 
     try {
       const response = await authFetch('/api/questions/generate', {
@@ -686,6 +709,15 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         } else {
           setSessionCompletedCount(prev => prev + 1);
         }
+        setCaseStudyPoolExhausted(false);
+      } else if (result && result.caseStudiesExhausted) {
+        // No real case study left to serve (none uploaded, or every one fully answered).
+        // handleStartNextCaseStudy optimistically hides the completion screen before knowing
+        // whether another case study exists - bring it back now that we know there isn't one, so
+        // the "no more available" message actually shows instead of silently re-revealing the
+        // last (already-answered) question underneath with no explanation.
+        setCaseStudyPoolExhausted(true);
+        setDomainSessionComplete(true);
       }
     } catch (err) {
       console.error("Endpoint fetch error, picking randomly from baseline defaults with filter match:", err);
@@ -1239,6 +1271,8 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
             domainSessionElapsedSeconds={domainSessionElapsedSeconds}
             domainSessionComplete={domainSessionComplete}
             onContinuePastTarget={() => setDomainSessionComplete(false)}
+            caseStudyPoolExhausted={caseStudyPoolExhausted}
+            handleStartNextCaseStudy={handleStartNextCaseStudy}
           />
         )}
 

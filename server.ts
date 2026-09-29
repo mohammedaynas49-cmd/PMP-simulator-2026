@@ -2445,8 +2445,23 @@ async function startServer() {
                 : "Question extracted from your dedicated case studies document."
             });
           }
-          console.log(`[Case Study Extraction] "${caseStudyBook.data().name}" found but its extracted pool is exhausted - falling back to docs-grounded generation.`);
+          console.log(`[Case Study Extraction] "${caseStudyBook.data().name}" found but its extracted pool is fully exhausted.`);
         }
+        // No case-study book at all, or its whole pool is exhausted - there is genuinely no real
+        // case study left to serve. Silently falling through to the generic grounded/AI path
+        // below would hand back an ordinary AI-drafted situational question with no
+        // case_study_title/scenario, which reads to the candidate as the app having silently
+        // switched modes (the exact behavior reported as a bug) - tell the client explicitly
+        // instead, so it can offer "exit this mode" rather than a question type that doesn't
+        // belong here at all.
+        return res.json({
+          question: null,
+          fallback: false,
+          caseStudiesExhausted: true,
+          message: isFrench
+            ? "Vous avez terminé toutes les études de cas disponibles pour le moment."
+            : "You've completed all the case studies currently available."
+        });
       } catch (caseStudyErr) {
         console.error("Error serving extracted case study question (falling back to generation):", caseStudyErr);
       }

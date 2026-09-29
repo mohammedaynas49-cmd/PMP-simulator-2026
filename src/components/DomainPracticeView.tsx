@@ -67,6 +67,11 @@ interface DomainPracticeViewProps {
   domainSessionElapsedSeconds: number;
   domainSessionComplete: boolean;
   onContinuePastTarget: () => void;
+  // True once the server has confirmed there is no real case study left to serve (see
+  // caseStudyPoolExhausted in Dashboard.tsx) - the completion screen offers "exit this mode"
+  // instead of "next case study" once this is set.
+  caseStudyPoolExhausted: boolean;
+  handleStartNextCaseStudy: () => void;
 }
 
 export default function DomainPracticeView({
@@ -101,7 +106,9 @@ export default function DomainPracticeView({
   domainSessionCorrect,
   domainSessionElapsedSeconds,
   domainSessionComplete,
-  onContinuePastTarget
+  onContinuePastTarget,
+  caseStudyPoolExhausted,
+  handleStartNextCaseStudy
 }: DomainPracticeViewProps) {
   return (
     <div className="space-y-6 flex-1 flex flex-col justify-center py-4 z-10" id="view_domain_practice">
@@ -527,12 +534,18 @@ export default function DomainPracticeView({
                 </div>
                 <div className="space-y-2">
                   <h3 className="font-black text-indigo-950 text-lg leading-none">
-                    {language === 'FR' ? "Session Terminée 🎉" : "Session Complete 🎉"}
+                    {prefQuestionType === 'case_study'
+                      ? (language === 'FR' ? "Étude de Cas Terminée 🎉" : "Case Study Complete 🎉")
+                      : (language === 'FR' ? "Session Terminée 🎉" : "Session Complete 🎉")}
                   </h3>
                   <p className="text-xs text-slate-600 font-medium leading-relaxed max-w-sm mx-auto">
-                    {language === 'FR'
-                      ? `Vous avez répondu à ${domainSessionAnswered} question(s) en ${formatElapsed(domainSessionElapsedSeconds)}.`
-                      : `You answered ${domainSessionAnswered} question(s) in ${formatElapsed(domainSessionElapsedSeconds)}.`}
+                    {prefQuestionType === 'case_study' && caseStudyPoolExhausted
+                      ? (language === 'FR'
+                          ? "Vous avez terminé toutes les études de cas disponibles pour le moment."
+                          : "You've completed all the case studies currently available.")
+                      : (language === 'FR'
+                          ? `Vous avez répondu à ${domainSessionAnswered} question(s) en ${formatElapsed(domainSessionElapsedSeconds)}.`
+                          : `You answered ${domainSessionAnswered} question(s) in ${formatElapsed(domainSessionElapsedSeconds)}.`)}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4 w-full">
@@ -552,20 +565,44 @@ export default function DomainPracticeView({
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
-                  <button
-                    id="domain_session_continue_btn"
-                    onClick={onContinuePastTarget}
-                    className="flex-1 py-3 px-5 rounded-2xl text-xs sm:text-sm font-black border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100/80 transition-all cursor-pointer"
-                  >
-                    {language === 'FR' ? "Continuer au-delà de l'objectif" : "Continue Past Target"}
-                  </button>
-                  <button
-                    id="domain_session_new_btn"
-                    onClick={handleClosePractice}
-                    className="flex-1 py-3 px-5 rounded-2xl text-xs sm:text-sm font-black bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90 transition-all cursor-pointer"
-                  >
-                    {language === 'FR' ? "Nouvelle Session" : "New Session"}
-                  </button>
+                  {prefQuestionType === 'case_study' ? (
+                    <>
+                      {!caseStudyPoolExhausted && (
+                        <button
+                          id="domain_session_next_case_study_btn"
+                          onClick={handleStartNextCaseStudy}
+                          disabled={isLoadingNew}
+                          className="flex-1 py-3 px-5 rounded-2xl text-xs sm:text-sm font-black border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100/80 transition-all cursor-pointer disabled:opacity-60"
+                        >
+                          {language === 'FR' ? "Étude de Cas Suivante" : "Next Case Study"}
+                        </button>
+                      )}
+                      <button
+                        id="domain_session_new_btn"
+                        onClick={handleClosePractice}
+                        className="flex-1 py-3 px-5 rounded-2xl text-xs sm:text-sm font-black bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90 transition-all cursor-pointer"
+                      >
+                        {language === 'FR' ? "Quitter ce Mode" : "Exit This Mode"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        id="domain_session_continue_btn"
+                        onClick={onContinuePastTarget}
+                        className="flex-1 py-3 px-5 rounded-2xl text-xs sm:text-sm font-black border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100/80 transition-all cursor-pointer"
+                      >
+                        {language === 'FR' ? "Continuer au-delà de l'objectif" : "Continue Past Target"}
+                      </button>
+                      <button
+                        id="domain_session_new_btn"
+                        onClick={handleClosePractice}
+                        className="flex-1 py-3 px-5 rounded-2xl text-xs sm:text-sm font-black bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90 transition-all cursor-pointer"
+                      >
+                        {language === 'FR' ? "Nouvelle Session" : "New Session"}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ) : currentQuestion ? (
