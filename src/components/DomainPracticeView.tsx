@@ -227,10 +227,14 @@ export default function DomainPracticeView({
                 </div>
               </div>
 
-              {/* Generation Source Filter - admin-only choice. Non-admin candidates are always
-                  restricted to documents-only generation (enforced again server-request-side in
-                  Dashboard.tsx's fetchNewQuestion, regardless of this UI). */}
-              {isAdmin ? (
+              {/* Generation Source Filter - admin-only choice, and only meaningful outside "Case
+                  Studies" focus (there's no AI-only way to draft a real case study - a shared
+                  narrative + several linked questions, only ever produced by real extraction -
+                  see extractCaseStudiesFromBook in server.ts). Non-admin candidates, and admins
+                  in Case Studies focus, are always restricted to documents-only generation
+                  (enforced again server-request-side in Dashboard.tsx's fetchNewQuestion,
+                  regardless of this UI). */}
+              {isAdmin && prefQuestionType !== 'case_study' ? (
                 <div className="md:col-span-2 space-y-3 pb-6 border-b border-dashed border-indigo-100">
                   <label className="block text-sm font-black text-indigo-950">
                     ⚙️ {language === 'FR' ? "Source de Génération des Questions" : "Question Generation Source"}
@@ -287,9 +291,13 @@ export default function DomainPracticeView({
                   <div className="flex items-center gap-2.5 bg-amber-50/60 border border-amber-200/60 rounded-2xl px-4 py-3">
                     <span className="text-lg">📚</span>
                     <span className="text-xs text-amber-900 font-bold">
-                      {language === 'FR'
-                        ? "Vos questions sont générées uniquement à partir des documents PMP téléversés par votre administrateur."
-                        : "Your questions are generated only from the PMP documents your administrator uploaded."}
+                      {isAdmin
+                        ? (language === 'FR'
+                            ? "Les Études de Cas proviennent toujours de vos documents téléversés - aucune IA ne peut générer un scénario partagé avec plusieurs questions liées."
+                            : "Case Studies always come from your uploaded documents - no AI can draft a shared scenario with several linked questions.")
+                        : (language === 'FR'
+                            ? "Vos questions sont générées uniquement à partir des documents PMP téléversés par votre administrateur."
+                            : "Your questions are generated only from the PMP documents your administrator uploaded.")}
                     </span>
                   </div>
                 </div>

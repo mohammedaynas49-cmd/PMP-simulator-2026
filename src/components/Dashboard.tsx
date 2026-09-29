@@ -671,8 +671,16 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
            excludeIds: excludeIds,
            // Non-admin candidates are restricted to documents-only generation (see
            // DomainPracticeView.tsx, which hides the source picker for them) - enforced here too
-           // so the restriction holds regardless of client state.
-           generationSource: isAdmin ? prefGenerationSource : 'docs',
+           // so the restriction holds regardless of client state. "Case Studies" focus is ALSO
+           // forced to docs-only regardless of admin status: there is no AI-only way to draft a
+           // real case study (a shared narrative + several linked questions, extracted verbatim -
+           // see extractCaseStudiesFromBook) - an admin who left "Question Generation Source" on
+           // its default "Combine"/"AI" would otherwise silently get ordinary AI-drafted
+           // situational questions mislabeled as case studies, with none of the real
+           // extraction's total-count sizing or end-of-series prompts, while a candidate (always
+           // forced to docs) correctly gets the real feature - exactly the admin/candidate
+           // inconsistency reported.
+           generationSource: (isAdmin && prefQuestionType !== 'case_study') ? prefGenerationSource : 'docs',
            questionType: prefQuestionType,
            // True only on the very first fetch of a newly-launched session - lets a "Case
            // Studies" session start fresh instead of being forced to resume a case study left
