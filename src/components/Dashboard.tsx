@@ -96,6 +96,11 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
   const [domainSessionElapsedSeconds, setDomainSessionElapsedSeconds] = useState<number>(0);
   const [domainSessionStartedAt, setDomainSessionStartedAt] = useState<number | null>(null);
   const [domainSessionComplete, setDomainSessionComplete] = useState<boolean>(false);
+  // Which specific case study (case_study_id) this session is currently on, for the "Case
+  // Studies" focus mode - lets the server keep serving THAT one's questions consecutively rather
+  // than randomly picking among every case study the candidate has ever touched, in any past
+  // session (see the server-side comment in /api/questions/generate).
+  const [activeCaseStudyId, setActiveCaseStudyId] = useState<string | null>(null);
 
   // Book Study Companion: state + handlers live in useBookCompanion (shared identically by the
   // Study Books tab and the Admin Control Panel's "Exam Books & AI Study" tab). Destructured
@@ -535,6 +540,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     setDomainSessionElapsedSeconds(0);
     setDomainSessionStartedAt(Date.now());
     setDomainSessionComplete(false);
+    setActiveCaseStudyId(null);
     if (overrideDomains) {
       setSelectedDomains(overrideDomains);
     }
@@ -558,6 +564,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     setDomainSessionElapsedSeconds(0);
     setDomainSessionStartedAt(null);
     setDomainSessionComplete(false);
+    setActiveCaseStudyId(null);
   };
 
   // Generate / Fetch next target PMP question
@@ -648,7 +655,11 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
            // Studies" session start fresh instead of being forced to resume a case study left
            // incomplete by a past session (see the server-side comment in
            // /api/questions/generate for why this matters).
-           freshDomainSession: isFreshDomainSession
+           freshDomainSession: isFreshDomainSession,
+           // Which specific case study THIS session is on (if any yet) - the server uses this to
+           // keep serving that one's questions consecutively, rather than randomly picking among
+           // every case study the candidate has ever partially answered in ANY past session.
+           activeCaseStudyId: activeCaseStudyId
          })
        });
 
@@ -656,6 +667,10 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
       if (result && result.question) {
         setCurrentQuestion(result.question);
         setIsGenerating(result.fallback === false);
+        // Track which case study the server actually served, so the next fetch in this session
+        // requests a continuation of that exact one (see activeCaseStudyId above). Cleared to
+        // null for a non-case-study question so it doesn't leak into a later mode switch.
+        setActiveCaseStudyId(result.question.question_focus_type === 'case_study' ? (result.question.case_study_id || null) : null);
         if (isFreshDomainSession) {
           setSessionCompletedCount(0);
           // A real case study extracted from an uploaded file knows exactly how many questions

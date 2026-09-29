@@ -2228,7 +2228,7 @@ async function startServer() {
 
   // Dynamic Two-Pass question generator endpoint
   app.post("/api/questions/generate", requireAuth, generationLimiter, async (req, res) => {
-    const { domain, methodology, contextTag, language, subject, phase, sessionCompletedCount, excludeIds, questionType, generationSource, freshDomainSession } = req.body;
+    const { domain, methodology, contextTag, language, subject, phase, sessionCompletedCount, excludeIds, questionType, generationSource, freshDomainSession, activeCaseStudyId } = req.body;
     const isFrench = language === "FR";
     const selectedDefaults = isFrench ? DEFAULT_QUESTIONS_FR : DEFAULT_QUESTIONS;
     
@@ -2374,18 +2374,22 @@ async function startServer() {
     // "Case Studies" focus in "docs solely" mode: same idea as the situational block above, but
     // served from a dedicated case-studies book (filename contains "case study"/"case_study",
     // see isCaseStudyBookName) whose questions were extracted grouped by shared scenario (see
-    // extractCaseStudiesFromBook). Picking prefers CONTINUING a case study the candidate has
-    // already started THIS SESSION (so all of one scenario's questions are answered
-    // consecutively, in their original order) over starting a fresh one - QuestionCard already
-    // renders case_study_title/case_study_scenario/series_label whenever present, so no separate
-    // UI is needed here. `excludeIds` accumulates across a candidate's ENTIRE account, not just
-    // the current session (a candidate should never repeat a question), so without
-    // `freshDomainSession` this "continue" preference would force-resume any case study left
-    // incomplete by a PAST session (hitting the target question count, quitting early, etc.)
-    // forever after, making it impossible to ever start a genuinely new one on demand - the
-    // client sets `freshDomainSession: true` only on the very first fetch of a newly-launched
-    // session (see fetchNewQuestion in Dashboard.tsx), so that one call picks unbiased among all
-    // available case studies instead.
+    // extractCaseStudiesFromBook). Picking must keep serving the SAME case study's questions
+    // consecutively within one session - QuestionCard already renders case_study_title/
+    // case_study_scenario/series_label whenever present, so no separate UI is needed here.
+    // `excludeIds` accumulates across a candidate's ENTIRE account, not just the current session
+    // (a candidate should never repeat a question), so "some question from case study X is in
+    // excludeIds" does NOT mean "X is this session's case study" - the candidate may have
+    // partially answered several different case studies across unrelated past sessions. Relying
+    // on that alone (as an earlier version of this code did) could randomly jump to one of those
+    // OTHER partially-done case studies mid-session instead of continuing the one just started -
+    // the exact bug reported ("l'app a sauté d'une question d'une case study à une autre"). The
+    // client now explicitly tracks and sends `activeCaseStudyId` (the specific case study THIS
+    // session is on, set from whatever was actually served last, see fetchNewQuestion in
+    // Dashboard.tsx) - continuation only ever targets that exact one. `freshDomainSession: true`
+    // (the very first fetch of a newly-launched session) additionally picks unbiased among ALL
+    // available case studies, so a session left incomplete by a PAST session doesn't get
+    // force-resumed just because it still has an unanswered question somewhere.
     if (questionType === "case_study" && activeGenSource === "docs") {
       try {
         const booksSnap = await withFirestoreTimeout(
@@ -2408,17 +2412,31 @@ async function startServer() {
               if (!groups.has(key)) groups.set(key, []);
               groups.get(key)!.push(q);
             }
-            const startedCaseStudyIds = new Set(
-              all.filter(q => excludeSet.has(q.question_id) && q.case_study_id).map(q => q.case_study_id)
-            );
             const groupKeys = Array.from(groups.keys());
-            const continuingKeys = freshDomainSession ? [] : groupKeys.filter(k => startedCaseStudyIds.has(k));
-            const candidateKeys = continuingKeys.length > 0 ? continuingKeys : groupKeys;
+            let candidateKeys: string[];
+            if (freshDomainSession) {
+              candidateKeys = groupKeys; // genuinely fresh: any case study is fair game
+            } else if (typeof activeCaseStudyId === "string" && groups.has(activeCaseStudyId)) {
+              // Continuing THIS session's specific case study - stay on it exclusively until its
+              // own pool is exhausted (it drops out of `groups` once every one of its questions
+              // is in excludeSet).
+              candidateKeys = [activeCaseStudyId];
+            } else {
+              // This session's case study is now fully exhausted, or no active one was tracked
+              // yet (e.g. an older client) - move on, preferring a case study genuinely untouched
+              // by ANY past session over one some other session left partially done, so we don't
+              // silently inherit unrelated leftover progress either.
+              const startedCaseStudyIds = new Set(
+                all.filter(q => excludeSet.has(q.question_id) && q.case_study_id).map(q => q.case_study_id)
+              );
+              const untouchedKeys = groupKeys.filter(k => !startedCaseStudyIds.has(k));
+              candidateKeys = untouchedKeys.length > 0 ? untouchedKeys : groupKeys;
+            }
             const chosenKey = candidateKeys[Math.floor(Math.random() * candidateKeys.length)];
             const groupQuestions = groups.get(chosenKey)!.sort((a, b) => (a.question_id || "").localeCompare(b.question_id || ""));
             const picked = groupQuestions[0];
             const servedQuestion = isFrench ? await translateCaseStudyQuestionToFrench(picked) : picked;
-            console.log(`[Case Study Extraction] Serving a real question from "${caseStudyBook.data().name}" (${unused.length} unused left, continuing=${continuingKeys.length > 0}, translated=${isFrench}).`);
+            console.log(`[Case Study Extraction] Serving a real question from "${caseStudyBook.data().name}" (${unused.length} unused left, case_study_id=${chosenKey}, translated=${isFrench}).`);
             return res.json({
               question: { ...servedQuestion, question_focus_type: "case_study" },
               fallback: false,
