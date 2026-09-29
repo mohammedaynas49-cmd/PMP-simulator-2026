@@ -45,6 +45,10 @@ export interface UserSession {
     Process: { answered: number; correct: number };
     'Business Environment': { answered: number; correct: number };
   };
+  /** Per-concept/tag mastery (each question's `tags`), finer-grained than `mastery` above - used
+   * for the admin's per-candidate "needs more work" breakdown. Optional: only accumulates going
+   * forward from when this was added. */
+  conceptMastery?: { [tag: string]: { answered: number; correct: number } };
   durationOfUtilization?: number; // active spent seconds
   // 'pending': new account, awaiting admin approval - blocked from the whole app.
   // 'granted': admin-approved, full access.

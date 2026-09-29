@@ -14,7 +14,12 @@ import {
   Check,
   Clock,
   UploadCloud,
-  Trash2
+  Trash2,
+  Eye,
+  X,
+  MapPin,
+  TrendingDown,
+  History
 } from 'lucide-react';
 
 interface AdminPanelViewProps {
@@ -36,6 +41,11 @@ interface AdminPanelViewProps {
   toggleUserRole: (targetUserId: string, currentRole: 'candidate' | 'admin' | undefined) => void;
   deleteCandidate: (targetUserId: string, targetEmail?: string) => void;
   currentUserUid?: string;
+  detailCandidateUid: string | null;
+  candidateHistory: { timestamp: string; country: string | null; city: string | null; region: string | null }[];
+  isLoadingHistory: boolean;
+  openCandidateDetail: (targetUserId: string) => void;
+  closeCandidateDetail: () => void;
 
   // Exam Books & AI Study (knowledge) tab
   books: BookMeta[];
@@ -71,6 +81,11 @@ export default function AdminPanelView({
   toggleUserRole,
   deleteCandidate,
   currentUserUid,
+  detailCandidateUid,
+  candidateHistory,
+  isLoadingHistory,
+  openCandidateDetail,
+  closeCandidateDetail,
   books,
   dragActive,
   bookUploading,
@@ -85,6 +100,34 @@ export default function AdminPanelView({
   isSavingConfig,
   saveGlobalConfig
 }: AdminPanelViewProps) {
+  const detailCandidate = allUsers.find(u => u.userId === detailCandidateUid) || null;
+
+  // Weakest concepts/tags: lowest correct-ratio first, requiring at least 2 attempts so a single
+  // lucky/unlucky guess doesn't dominate the ranking. Falls back to any tag with data at all if
+  // nothing meets that bar yet (a candidate who has barely started).
+  const weakestConcepts = (() => {
+    const entries = Object.entries(detailCandidate?.conceptMastery || {});
+    const withRatio = entries.map(([tag, stats]) => ({
+      tag,
+      answered: stats.answered,
+      correct: stats.correct,
+      ratio: stats.answered > 0 ? (stats.correct / stats.answered) * 100 : 0
+    }));
+    const qualified = withRatio.filter(e => e.answered >= 2);
+    const pool = qualified.length > 0 ? qualified : withRatio;
+    return pool.sort((a, b) => a.ratio - b.ratio).slice(0, 5);
+  })();
+
+  const formatHistoryTimestamp = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString(language === 'FR' ? 'fr-FR' : 'en-US', {
+        dateStyle: 'medium', timeStyle: 'short'
+      });
+    } catch {
+      return iso;
+    }
+  };
+
   return (
     <div className="space-y-6 flex-1 flex flex-col h-full animate-in fade-in duration-300 text-left" id="view_admin_portal">
 
@@ -344,6 +387,15 @@ export default function AdminPanelView({
                           </td>
                           <td className="p-4 text-right">
                             <div className="flex gap-1.5 justify-end">
+                              {/* Details: chronological login history + location, domain scores,
+                                  and weakest concepts for this candidate. */}
+                              <button
+                                onClick={() => openCandidateDetail(u.userId)}
+                                className="px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded-md text-[10px] font-black cursor-pointer transition-all flex items-center gap-1"
+                                title={language === 'FR' ? "Voir le détail du candidat" : "View candidate detail"}
+                              >
+                                <Eye className="w-2.5 h-2.5" />
+                              </button>
                               {/* Reset count */}
                               <button
                                 onClick={() => resetUserTestsCount(u.userId)}
@@ -625,6 +677,123 @@ export default function AdminPanelView({
               )}
               <span>{language === 'FR' ? "Enregistrer les Paramètres" : "Update Simulator Constraints"}</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Per-candidate detail: chronological login history + location, domain scores, and
+          weakest concepts to work on - see openCandidateDetail/closeCandidateDetail
+          (useAdminPanel.ts). Domain/concept mastery already ride along with the full UserSession
+          doc in allUsers; only the login-history subcollection needs its own fetch. */}
+      {detailCandidateUid && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={closeCandidateDetail}
+          id="candidate_detail_overlay"
+        >
+          <div
+            className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6 sm:p-8 space-y-6"
+            onClick={(e) => e.stopPropagation()}
+            id="candidate_detail_modal"
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+              <div className="min-w-0">
+                <h3 className="text-sm font-black text-indigo-950 truncate">{detailCandidate?.email || detailCandidateUid}</h3>
+                <span className="text-[10px] font-mono text-slate-600 font-bold">ID: {detailCandidateUid}</span>
+              </div>
+              <button
+                onClick={closeCandidateDetail}
+                className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 cursor-pointer shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Domain scores */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-2">
+                <Shield className="w-3.5 h-3.5 text-indigo-500" />
+                {language === 'FR' ? "Scores par Domaine ECO" : "ECO Domain Scores"}
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {(['People', 'Process', 'Business Environment'] as const).map((domain) => {
+                  const stats = detailCandidate?.mastery?.[domain] || { answered: 0, correct: 0 };
+                  const ratio = stats.answered > 0 ? Math.round((stats.correct / stats.answered) * 100) : 0;
+                  return (
+                    <div key={domain} className="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                      <div className="text-[10px] font-black text-slate-600 uppercase truncate">{domain}</div>
+                      <div className="text-lg font-black text-indigo-950 font-mono">{ratio}%</div>
+                      <div className="text-[9px] text-slate-600 font-bold">{stats.correct}/{stats.answered}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Weakest concepts */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-2">
+                <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
+                {language === 'FR' ? "Concepts à Travailler en Priorité" : "Concepts Needing the Most Work"}
+              </h4>
+              {weakestConcepts.length === 0 ? (
+                <p className="text-[11px] text-slate-600 font-bold italic">
+                  {language === 'FR' ? "Pas encore assez de données (aucune question répondue)." : "Not enough data yet (no questions answered)."}
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {weakestConcepts.map((c) => (
+                    <div key={c.tag} className="flex items-center gap-3">
+                      <span className="text-[11px] font-bold text-slate-700 w-40 truncate shrink-0" title={c.tag}>{c.tag}</span>
+                      <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/40">
+                        <div
+                          className={`h-full rounded-full ${c.ratio >= 75 ? 'bg-emerald-500' : c.ratio >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                          style={{ width: `${c.ratio}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] font-mono font-black text-slate-700 w-20 text-right shrink-0">{Math.round(c.ratio)}% ({c.correct}/{c.answered})</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Chronological login history + location */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black text-indigo-950 uppercase tracking-wider flex items-center gap-2">
+                <History className="w-3.5 h-3.5 text-violet-500" />
+                {language === 'FR' ? "Historique des Connexions" : "Login History"}
+              </h4>
+              {isLoadingHistory ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+                </div>
+              ) : candidateHistory.length === 0 ? (
+                <p className="text-[11px] text-slate-600 font-bold italic">
+                  {language === 'FR' ? "Aucun historique de connexion disponible." : "No login history available yet."}
+                </p>
+              ) : (
+                <div className="border border-slate-200 rounded-2xl overflow-hidden max-h-64 overflow-y-auto">
+                  <table className="w-full text-left">
+                    <tbody>
+                      {candidateHistory.map((entry, i) => (
+                        <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
+                          <td className="px-3 py-2 text-[10px] font-mono font-bold text-slate-700 whitespace-nowrap">
+                            {formatHistoryTimestamp(entry.timestamp)}
+                          </td>
+                          <td className="px-3 py-2 text-[10px] font-bold text-slate-600 flex items-center gap-1.5">
+                            <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                            {entry.city || entry.country
+                              ? [entry.city, entry.region, entry.country].filter(Boolean).join(', ')
+                              : (language === 'FR' ? "Localisation inconnue" : "Unknown location")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

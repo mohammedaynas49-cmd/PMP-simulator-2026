@@ -167,6 +167,11 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     Process: { answered: 0, correct: 0 },
     'Business Environment': { answered: 0, correct: 0 }
   });
+  // Per-concept/tag mastery (each question's `tags`, e.g. "Earned Value", "Risk Management") -
+  // finer-grained than the 3-domain `mastery` above, used by the admin's per-candidate "needs more
+  // work" breakdown. Only accumulates going forward from when this was added; existing candidates'
+  // prior answers were never tagged this way, so this starts empty for them, not retroactively.
+  const [conceptMastery, setConceptMastery] = useState<{ [tag: string]: { answered: number; correct: number } }>({});
 
   // Mock Exam specific states
   const [examQuestions, setExamQuestions] = useState<PMPQuestion[]>([]);
@@ -229,7 +234,12 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     toggleUserRole,
     deleteCandidate,
     resetUserTestsCount,
-    saveGlobalConfig
+    saveGlobalConfig,
+    detailCandidateUid,
+    candidateHistory,
+    isLoadingHistory,
+    openCandidateDetail,
+    closeCandidateDetail
   } = useAdminPanel({
     user,
     language,
@@ -293,6 +303,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
           setScorePercentage(data.scorePercentage || 0);
           setIncorrectIds(data.incorrectIds || []);
           setAnsweredMap(data.answeredQuestions || {});
+          setConceptMastery(data.conceptMastery || {});
           if (data.mastery) {
             setMastery(data.mastery);
           }
@@ -308,6 +319,11 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
           // Record this sign-in's timestamp for the admin's Candidate Directory - fire-and-forget,
           // never blocks rendering on it.
           updateDoc(docRef, { lastLoginAt: new Date().toISOString() }).catch(() => {});
+
+          // One chronological login-history entry (timestamp + best-effort country/city resolved
+          // server-side from the connection IP) for the admin's per-candidate detail view - also
+          // fire-and-forget, never blocks rendering.
+          authFetch('/api/session/log-login', { method: 'POST' }).catch(() => {});
 
           // Admin status prefers the `admin` custom claim on the ID token (authoritative, and
           // what firestore.rules checks first - see firestore.rules). The Firestore `role` field
@@ -720,6 +736,16 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
       [qDomain]: updatedDomainStats
     };
 
+    // Per-concept/tag mastery: a question can carry several tags, each gets its own tally.
+    const newConceptMastery = { ...conceptMastery };
+    for (const tag of currentQuestion.tags || []) {
+      const prevTagStats = newConceptMastery[tag] || { answered: 0, correct: 0 };
+      newConceptMastery[tag] = {
+        answered: prevTagStats.answered + 1,
+        correct: prevTagStats.correct + (isCorrect ? 1 : 0)
+      };
+    }
+
     // Calculate total correct answers to re-average scorePercentage
     const totalCorrect = Object.keys(newMastery).reduce((sum, d) => {
       return sum + newMastery[d as PMPDomain].correct;
@@ -732,6 +758,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     setIncorrectIds(newIncorrect);
     setAnsweredMap(newAnsweredMap);
     setMastery(newMastery);
+    setConceptMastery(newConceptMastery);
 
     // Synchronize directly with Firestore
     const path = `sessions/${user.uid}`;
@@ -741,7 +768,8 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         scorePercentage: newScore,
         incorrectIds: newIncorrect,
         answeredQuestions: newAnsweredMap,
-        mastery: newMastery
+        mastery: newMastery,
+        conceptMastery: newConceptMastery
       });
     } catch (err) {
       try {
@@ -1314,6 +1342,11 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
             toggleUserRole={toggleUserRole}
             deleteCandidate={deleteCandidate}
             currentUserUid={user?.uid}
+            detailCandidateUid={detailCandidateUid}
+            candidateHistory={candidateHistory}
+            isLoadingHistory={isLoadingHistory}
+            openCandidateDetail={openCandidateDetail}
+            closeCandidateDetail={closeCandidateDetail}
             books={books}
             dragActive={dragActive}
             bookUploading={bookUploading}

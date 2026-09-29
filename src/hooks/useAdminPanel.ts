@@ -39,6 +39,37 @@ export function useAdminPanel({
   const [adminSubTab, setAdminSubTab] = useState<'users' | 'knowledge' | 'settings'>('users');
   const [adminUserSearch, setAdminUserSearch] = useState<string>('');
 
+  // Per-candidate detail panel (chronological login history + location) - `mastery`/
+  // `conceptMastery` for the "domain scores" and "needs more work" breakdowns already come along
+  // with the full UserSession doc in allUsers/filteredUsers, so only the login-history
+  // subcollection (a separate Firestore path) needs its own fetch.
+  const [detailCandidateUid, setDetailCandidateUid] = useState<string | null>(null);
+  const [candidateHistory, setCandidateHistory] = useState<{ timestamp: string; country: string | null; city: string | null; region: string | null }[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
+
+  const openCandidateDetail = async (targetUserId: string) => {
+    setDetailCandidateUid(targetUserId);
+    setCandidateHistory([]);
+    setIsLoadingHistory(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const response = await fetch(`/api/admin/candidate/${targetUserId}/history`, {
+        headers: idToken ? { Authorization: `Bearer ${idToken}` } : {}
+      });
+      const data = await response.json();
+      setCandidateHistory(Array.isArray(data.entries) ? data.entries : []);
+    } catch (err) {
+      console.error("Action openCandidateDetail failed:", err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const closeCandidateDetail = () => {
+    setDetailCandidateUid(null);
+    setCandidateHistory([]);
+  };
+
   // Filter registered users dynamically based on admin email search query
   const filteredUsers = allUsers.filter((u) => {
     if (!adminUserSearch.trim()) return true;
@@ -203,6 +234,11 @@ export function useAdminPanel({
     toggleUserRole,
     deleteCandidate,
     resetUserTestsCount,
-    saveGlobalConfig
+    saveGlobalConfig,
+    detailCandidateUid,
+    candidateHistory,
+    isLoadingHistory,
+    openCandidateDetail,
+    closeCandidateDetail
   };
 }

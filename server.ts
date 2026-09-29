@@ -253,6 +253,12 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Render (and most PaaS hosts) sit the app behind a reverse proxy - without this, req.ip
+  // resolves to the proxy's own internal address, not the real client IP, which breaks both
+  // rate limiting (generationLimiter below) and the login-history geolocation lookup
+  // (POST /api/session/log-login) that reads req.ip to resolve country/city.
+  app.set("trust proxy", true);
+
   // Run database seeding on server startup
   seedPmbokGlossary();
 
@@ -399,6 +405,48 @@ async function startServer() {
     res.json({ questions: DEFAULT_QUESTIONS });
   });
 
+  // Resolves a client IP to a coarse (country/city) location via a free, no-API-key geolocation
+  // service - never precise/GPS-level, and returns "fail" for local/private IPs (localhost, LAN),
+  // which is treated as "unknown" rather than an error so local dev never breaks this. HTTP-only
+  // on the free tier, but this is a server-to-server call (this Node process calling out to
+  // ip-api.com), never the browser, so there's no mixed-content concern.
+  async function resolveIpLocation(ip: string): Promise<{ country: string | null; city: string | null; region: string | null }> {
+    try {
+      const cleanIp = (ip || "").replace(/^::ffff:/, ""); // IPv4-mapped IPv6 form Express sometimes reports
+      const resp = await fetch(`http://ip-api.com/json/${encodeURIComponent(cleanIp)}?fields=status,country,regionName,city`);
+      const data = await resp.json();
+      if (data.status !== "success") {
+        return { country: null, city: null, region: null };
+      }
+      return { country: data.country || null, city: data.city || null, region: data.regionName || null };
+    } catch (err) {
+      console.warn("IP geolocation lookup failed:", err);
+      return { country: null, city: null, region: null };
+    }
+  }
+
+  // Logs one chronological login-history entry for the calling user, with a best-effort
+  // country/city resolved from their connection IP - called once per app load (see Dashboard.tsx,
+  // alongside the existing lastLoginAt update). Self-service only (a user logs their own visit);
+  // reading this history back is admin-only, see GET /api/admin/candidate/:uid/history below.
+  app.post("/api/session/log-login", requireAuth, async (req, res) => {
+    try {
+      const uid = (req as any).authUid;
+      const ip = req.ip || "";
+      const location = await resolveIpLocation(ip);
+      await collection(db, "sessions", uid, "loginHistory").add({
+        timestamp: new Date().toISOString(),
+        ip,
+        ...location
+      });
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Error in /api/session/log-login:", err);
+      // Never block the app over a logging failure.
+      res.json({ success: false });
+    }
+  });
+
   // --- ADMIN API ENDPOINTS ---
 
   // Grants or revokes the `admin` custom claim on a target user's Firebase Auth account. This is
@@ -454,6 +502,9 @@ async function startServer() {
         return res.status(400).json({ error: "You cannot delete your own account." });
       }
 
+      const historySnap = await collection(db, "sessions", uid, "loginHistory").get();
+      await Promise.all(historySnap.docs.map(h => deleteDoc(h.ref)));
+
       await deleteDoc(doc(db, "sessions", uid));
       try {
         await adminAuth.deleteUser(uid);
@@ -470,6 +521,28 @@ async function startServer() {
     } catch (err: any) {
       console.error("Error in DELETE /api/admin/candidate/:uid:", err);
       res.status(500).json({ error: err.message || "Failed to delete candidate account." });
+    }
+  });
+
+  // Chronological login history for one candidate (timestamp + best-effort country/city/region),
+  // admin-only - candidates can never read this about themselves or anyone else, only log their
+  // own new entries (see POST /api/session/log-login above). Newest first, capped at 100 entries
+  // so a long-lived account's payload stays bounded.
+  app.get("/api/admin/candidate/:uid/history", requireAdmin, async (req, res) => {
+    try {
+      const { uid } = req.params;
+      const snap = await withFirestoreTimeout(
+        collection(db, "sessions", uid, "loginHistory").get(),
+        "list candidate login history"
+      );
+      const entries = snap.docs
+        .map(d => d.data())
+        .sort((a, b) => (b.timestamp || "").localeCompare(a.timestamp || ""))
+        .slice(0, 100);
+      res.json({ entries });
+    } catch (err: any) {
+      console.error("Error in GET /api/admin/candidate/:uid/history:", err);
+      res.status(500).json({ error: err.message || "Failed to load login history." });
     }
   });
 
