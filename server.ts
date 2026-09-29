@@ -439,6 +439,40 @@ async function startServer() {
     }
   });
 
+  // Permanently deletes a candidate account: both the Firestore `sessions/{uid}` document and the
+  // underlying Firebase Auth user itself (via the Admin SDK - a client can only ever delete its
+  // own auth account, never another user's, so this has to be server-side). An admin can never
+  // delete their own account through this endpoint, so the Candidate Directory can't be used to
+  // accidentally lock everyone out of admin access.
+  app.delete("/api/admin/candidate/:uid", requireAdmin, async (req, res) => {
+    try {
+      const { uid } = req.params;
+      if (!uid) {
+        return res.status(400).json({ error: "uid is required." });
+      }
+      if (uid === (req as any).authUid) {
+        return res.status(400).json({ error: "You cannot delete your own account." });
+      }
+
+      await deleteDoc(doc(db, "sessions", uid));
+      try {
+        await adminAuth.deleteUser(uid);
+      } catch (authErr: any) {
+        // The Firestore session doc is already gone (the part the Candidate Directory reads) -
+        // a missing/already-deleted Auth user shouldn't surface as a failure to the admin.
+        if (authErr?.code !== "auth/user-not-found") {
+          throw authErr;
+        }
+      }
+
+      console.log(`[Admin] ${(req as any).authUid} deleted candidate account ${uid}`);
+      res.json({ success: true, uid });
+    } catch (err: any) {
+      console.error("Error in DELETE /api/admin/candidate/:uid:", err);
+      res.status(500).json({ error: err.message || "Failed to delete candidate account." });
+    }
+  });
+
   // --- PMP STUDY BOOKS API ENDPOINTS ---
 
   // Scans an uploaded document's chunks for EXISTING, ready-to-use multiple-choice questions

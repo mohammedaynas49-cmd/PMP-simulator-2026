@@ -176,7 +176,7 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
 
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t-2 border-dotted border-slate-200"></div>
-            <span className="flex-shrink mx-4 text-slate-400 text-[10px] font-mono uppercase tracking-widest font-black">{texts.or}</span>
+            <span className="flex-shrink mx-4 text-slate-500 text-[10px] font-mono uppercase tracking-widest font-black">{texts.or}</span>
             <div className="flex-grow border-t-2 border-dotted border-slate-200"></div>
           </div>
 
@@ -190,7 +190,7 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
           </button>
         </div>
 
-        <p className="text-[10px] font-mono text-slate-400 text-center leading-relaxed font-semibold">
+        <p className="text-[10px] font-mono text-slate-500 text-center leading-relaxed font-semibold">
           {texts.footerHint}
         </p>
       </div>

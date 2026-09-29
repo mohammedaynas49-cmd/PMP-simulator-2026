@@ -195,7 +195,7 @@ export default function BookCompanionView({
                     ? (language === 'FR' ? "Analyse et indexation du livre..." : "Parsing PMP Guide text...")
                     : (language === 'FR' ? "Déposez votre livre d'étude PMP ici" : "Upload your PMP Exam study book")}
                 </h3>
-                <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed font-bold">
+                <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed font-bold">
                   {bookUploading
                     ? (language === 'FR' ? "Analyse intensive des pages pour créer des modules d'étude indexés. Cela peut prendre quelques secondes pour les gros livres (400+ pages)." : "We are indexing every single page of your book to build high-performance study chunks. This is extremely robust for books from 400 to 1000 pages!")
                     : (language === 'FR' ? "Prend en charge les formats PDF d'apprentissage et TXT jusqu'à 150 Mo. Glissez-déposez ou cliquez pour parcourir vos fichiers." : "Accepts PDF exam prep booklets and TXT files up to 150MB. Drag & drop or click anywhere to select.")
@@ -251,12 +251,12 @@ export default function BookCompanionView({
                     <span className="text-xs font-black text-slate-800 line-clamp-2 leading-snug">{b.name}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteBook(b.id); }}
-                      className="p-1 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                      className="p-1 rounded-lg hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-500 font-mono font-bold">
+                  <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-600 font-mono font-bold">
                     <span>{b.pageCount} pages</span>
                     <span>•</span>
                     <span>{b.chunkCount} zones</span>
@@ -293,7 +293,7 @@ export default function BookCompanionView({
                   <span className="text-[11px] font-black text-slate-700 block mt-1">
                     {bookUploading ? (language === 'FR' ? "Lave/Indexe..." : "Uploading...") : (language === 'FR' ? "Ajouter un livre" : "+ Add another book")}
                   </span>
-                  <span className="text-[9px] text-slate-400 block font-bold">PDF/TXT &lt; 150MB</span>
+                  <span className="text-[9px] text-slate-500 block font-bold">PDF/TXT &lt; 150MB</span>
                 </div>
               </div>
             </div>
@@ -337,7 +337,7 @@ export default function BookCompanionView({
                     <h3 className="text-sm font-black text-indigo-950">
                       {language === 'FR' ? "Questions MCQ Fondées" : "Grounded PDF MCQs"}
                     </h3>
-                    <p className="text-[10px] text-slate-500 font-bold">
+                    <p className="text-[10px] text-slate-600 font-bold">
                       {language === 'FR' ? "Générez des cas d'examen liés à vos pages" : "Generate scenarios grounded in uploaded guide pages"}
                     </p>
                   </div>
@@ -369,7 +369,7 @@ export default function BookCompanionView({
                         className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer ${
                           bookQuestionType === 'situational'
                             ? 'bg-indigo-50 border-indigo-300 text-indigo-950 shadow-xxs'
-                            : 'bg-slate-50/50 border-slate-200 text-slate-500 hover:bg-slate-50'
+                            : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                       >
                         💼 {language === 'FR' ? "Situation PMP" : "Situational Scenario"}
@@ -380,7 +380,7 @@ export default function BookCompanionView({
                         className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black border transition-all cursor-pointer ${
                           bookQuestionType === 'definition'
                             ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xxs'
-                            : 'bg-slate-50/50 border-slate-200 text-slate-500 hover:bg-slate-50'
+                            : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                       >
                         📖 {language === 'FR' ? "Définitions PMBOK" : "PMBOK Definitions"}
@@ -432,7 +432,7 @@ export default function BookCompanionView({
                         <span className="text-xs font-black text-indigo-950 block">
                           {language === 'FR' ? "Prêt pour l'entraînement" : "Ready for custom quiz formulation"}
                         </span>
-                        <span className="text-[10px] text-slate-500 max-w-sm block leading-relaxed font-bold mx-auto">
+                        <span className="text-[10px] text-slate-600 max-w-sm block leading-relaxed font-bold mx-auto">
                           {language === 'FR' ? "Saisissez un terme ou laissez vide, puis cliquez sur générer pour obtenir une question de niveau d'architecte." : "Define a specific keyword directory or leave blank, then generate a situational PMP query."}
                         </span>
                       </div>
@@ -457,7 +457,7 @@ export default function BookCompanionView({
                         <h3 className="text-sm font-black text-indigo-950">
                           {language === 'FR' ? "Questions Extraites du Document" : "Questions Extracted From Your Document"}
                         </h3>
-                        <p className="text-[10px] text-slate-500 font-bold">
+                        <p className="text-[10px] text-slate-600 font-bold">
                           {language === 'FR' ? "Ce sont les questions réellement présentes dans votre document, pas des questions générées par IA" : "These are the actual questions found inside your uploaded document, not AI-generated ones"}
                         </p>
                       </div>
@@ -489,7 +489,7 @@ export default function BookCompanionView({
                           <span className="text-xs font-black text-indigo-950 block">
                             {language === 'FR' ? "Analyse du document en cours..." : "Scanning your document..."}
                           </span>
-                          <span className="text-[10px] text-slate-500 max-w-sm block leading-relaxed font-bold mx-auto">
+                          <span className="text-[10px] text-slate-600 max-w-sm block leading-relaxed font-bold mx-auto">
                             {language === 'FR' ? "Nous recherchons des questions déjà présentes dans ce livre. Cela peut prendre quelques minutes." : "We're searching this book for questions it already contains. This can take a few minutes for large documents."}
                           </span>
                         </div>
@@ -501,7 +501,7 @@ export default function BookCompanionView({
                           <span className="text-xs font-black text-indigo-950 block">
                             {language === 'FR' ? "Extraction indisponible" : "Extraction unavailable"}
                           </span>
-                          <span className="text-[10px] text-slate-500 max-w-sm block leading-relaxed font-bold mx-auto">
+                          <span className="text-[10px] text-slate-600 max-w-sm block leading-relaxed font-bold mx-auto">
                             {language === 'FR' ? "L'extraction automatique nécessite une clé IA configurée côté serveur." : "Automatic extraction requires an AI key configured on the server."}
                           </span>
                         </div>
@@ -516,14 +516,14 @@ export default function BookCompanionView({
                             <button
                               onClick={() => setExtractedIndex(i => Math.max(0, i - 1))}
                               disabled={extractedIndex === 0}
-                              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setExtractedIndex(i => Math.min(extractedQuestions.length - 1, i + 1))}
                               disabled={extractedIndex >= extractedQuestions.length - 1}
-                              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                             >
                               <ChevronRight className="w-3.5 h-3.5" />
                             </button>
@@ -550,7 +550,7 @@ export default function BookCompanionView({
                           <span className="text-xs font-black text-indigo-950 block">
                             {language === 'FR' ? "Aucune question trouvée" : "No questions found"}
                           </span>
-                          <span className="text-[10px] text-slate-500 max-w-sm block leading-relaxed font-bold mx-auto">
+                          <span className="text-[10px] text-slate-600 max-w-sm block leading-relaxed font-bold mx-auto">
                             {language === 'FR' ? "Ce document ne semble pas contenir de questions à choix multiples détectables." : "This document doesn't appear to contain any detectable multiple-choice questions."}
                           </span>
                         </div>
@@ -582,7 +582,7 @@ export default function BookCompanionView({
                             ? (language === 'FR' ? "Résultats de l'examen" : "Exam Results")
                             : (language === 'FR' ? "Examen Chronométré" : "Timed Exam")}
                         </h3>
-                        <p className="text-[10px] text-slate-500 font-bold">
+                        <p className="text-[10px] text-slate-600 font-bold">
                           {extractedExamSubmitted
                             ? (language === 'FR' ? "Révisez chaque question avec la correction complète" : "Review each question with full correctness revealed")
                             : (language === 'FR' ? `${answeredCount} / ${extractedExamQuestions.length} répondues` : `${answeredCount} / ${extractedExamQuestions.length} answered`)}
@@ -633,14 +633,14 @@ export default function BookCompanionView({
                             <button
                               onClick={() => setExtractedExamIndex(i => Math.max(0, i - 1))}
                               disabled={extractedExamIndex === 0}
-                              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setExtractedExamIndex(i => Math.min(extractedExamQuestions.length - 1, i + 1))}
                               disabled={extractedExamIndex >= extractedExamQuestions.length - 1}
-                              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                             >
                               <ChevronRight className="w-3.5 h-3.5" />
                             </button>

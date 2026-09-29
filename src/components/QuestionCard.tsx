@@ -254,13 +254,13 @@ export default function QuestionCard({
             } else if (isSelected && !isCorrect) {
               optionStyles = "bg-gradient-to-r from-rose-500/10 via-pink-500/5 to-white/95 border-2 border-rose-500 text-rose-950 shadow-sm font-bold";
             } else {
-              optionStyles = "bg-slate-50/50 border-slate-150 text-slate-400 opacity-60";
+              optionStyles = "bg-slate-50/50 border-slate-150 text-slate-500 opacity-60";
             }
           } else if (isSubmitted && lockFeedback) {
             // Locked exam mode: keep the candidate's own selection visible, neutrally styled.
             optionStyles = isSelected
               ? "bg-gradient-to-r from-violet-50 to-indigo-50 border-2 border-violet-400 text-violet-950 font-black shadow-sm"
-              : "bg-slate-50/50 border-slate-150 text-slate-400 opacity-60";
+              : "bg-slate-50/50 border-slate-150 text-slate-500 opacity-60";
           }
 
           return (
@@ -338,7 +338,7 @@ export default function QuestionCard({
               className={`px-7 py-3 rounded-2xl font-black text-sm transition-all duration-200 shadow-md ${
                 selectedOption && !isGenerating
                   ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 active:scale-95 text-white hover:scale-[1.01] cursor-pointer'
-                  : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-205'
+                  : 'bg-slate-100 text-slate-500 cursor-not-allowed border border-slate-205'
               }`}
             >
               {texts.submitBtn}
@@ -399,7 +399,7 @@ export default function QuestionCard({
               </div>
             </div>
             <div className="text-right flex flex-col items-end">
-              <span className="text-[9px] text-slate-400 font-mono block font-bold uppercase tracking-wider">{texts.auditedStandard}</span>
+              <span className="text-[9px] text-slate-500 font-mono block font-bold uppercase tracking-wider">{texts.auditedStandard}</span>
               <span className="text-xs text-violet-650 font-bold font-mono">{question.pmbok_8_reference.split('|')[0] || 'PMBOK 8th Edition'}</span>
               {isAdmin && question.grounded_book_name && (
                 <span className="text-[10px] text-emerald-700 font-bold font-mono mt-0.5 flex items-center gap-1">
@@ -426,11 +426,11 @@ export default function QuestionCard({
                   </div>
                 )}
                 <div className="mt-4 text-xs font-bold text-violet-800 flex items-center gap-2 flex-wrap">
-                  <span className="text-slate-500 font-medium">{texts.correctLabel}:</span>
+                  <span className="text-slate-600 font-medium">{texts.correctLabel}:</span>
                   <span className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-mono font-black select-all tracking-wider shadow-md">
                     {question.correct_option}
                   </span>
-                  <span className="text-slate-500 text-[11px] font-mono font-normal">
+                  <span className="text-slate-600 text-[11px] font-mono font-normal">
                     ({question.options.find(o => o.startsWith(question.correct_option)) || ''})
                   </span>
                 </div>
@@ -465,7 +465,7 @@ export default function QuestionCard({
 
           {/* Active Explanatory Logic Coaching Panel */}
           <div className="space-y-3 pt-1">
-            <h5 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 font-mono">
+            <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5 font-mono">
               <HelpCircle className="w-3.5 h-3.5 text-indigo-400" /> {texts.coachingTitle}
             </h5>
             <div className="text-indigo-950 text-[14px] leading-relaxed select-text bg-gradient-to-tr from-indigo-50/20 to-violet-50/10 border border-indigo-100/40 p-5 rounded-2xl space-y-4 shadow-xxs">

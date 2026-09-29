@@ -118,7 +118,7 @@ export default function ExamView({
           </div>
           <div>
             <h2 className="text-[15px] font-black text-indigo-950">{texts.officialExamTitle}</h2>
-            <p className="text-xs text-slate-500 font-mono mt-0.5 font-bold">{texts.enforcementSplit}</p>
+            <p className="text-xs text-slate-600 font-mono mt-0.5 font-bold">{texts.enforcementSplit}</p>
           </div>
         </div>
 
@@ -171,7 +171,7 @@ export default function ExamView({
                 onClick={handleResetExam}
                 className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-700 px-5 py-2.5 rounded-xl font-bold text-sm cursor-pointer shadow-xs transition-colors"
               >
-                <RotateCcw className="w-4 h-4 text-slate-500" />
+                <RotateCcw className="w-4 h-4 text-slate-600" />
                 <span>{texts.restartSim}</span>
               </button>
             </div>
@@ -206,7 +206,7 @@ export default function ExamView({
                   const isAnswered = answeredMap[q.question_id] !== undefined;
                   const isActive = examIndex === qIndex && breakActive === null;
 
-                  let btnStyle = "bg-slate-50 border border-slate-200/60 text-slate-500 hover:bg-slate-100";
+                  let btnStyle = "bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100";
                   if (isActive) {
                     btnStyle = "bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black ring-2 ring-indigo-500 shadow-sm scale-105";
                   } else if (isAnswered) {
@@ -263,7 +263,7 @@ export default function ExamView({
                   const isAnswered = answeredMap[q.question_id] !== undefined;
                   const isActive = examIndex === qIndex && breakActive === null;
 
-                  let btnStyle = "bg-slate-50 border border-slate-200/60 text-slate-500 hover:bg-slate-100";
+                  let btnStyle = "bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100";
                   if (isActive) {
                     btnStyle = "bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black ring-2 ring-indigo-500 shadow-sm scale-105";
                   } else if (isAnswered) {
@@ -320,7 +320,7 @@ export default function ExamView({
                   const isAnswered = answeredMap[q.question_id] !== undefined;
                   const isActive = examIndex === qIndex && breakActive === null;
 
-                  let btnStyle = "bg-slate-50 border border-slate-200/60 text-slate-500 hover:bg-slate-100";
+                  let btnStyle = "bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100";
                   if (isActive) {
                     btnStyle = "bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black ring-2 ring-indigo-500 shadow-sm scale-105";
                   } else if (isAnswered) {
@@ -475,7 +475,7 @@ export default function ExamView({
 
           {/* Domain feedback matrices info box */}
           <div className="p-5 bg-gradient-to-b from-indigo-50/40 to-violet-50/30 border border-indigo-150 rounded-2xl text-left space-y-3">
-            <span className="text-xs font-black text-slate-400 uppercase tracking-widest font-mono">{texts.guidelinesTitle}</span>
+            <span className="text-xs font-black text-slate-500 uppercase tracking-widest font-mono">{texts.guidelinesTitle}</span>
             <p className="text-xs text-slate-600 leading-relaxed font-bold">
               {texts.guidelinesDesc}
             </p>
@@ -489,7 +489,7 @@ export default function ExamView({
           <HelpCircle className="w-12 h-12 text-violet-400 animate-pulse" />
           <div className="space-y-1.5">
             <h3 className="text-sm sm:text-base font-black text-slate-800">{texts.notInitiatedTitle}</h3>
-            <p className="text-xs text-slate-500 max-w-sm font-bold leading-relaxed">
+            <p className="text-xs text-slate-600 max-w-sm font-bold leading-relaxed">
               {texts.notInitiatedDesc}
             </p>
           </div>

@@ -124,6 +124,34 @@ export function useAdminPanel({
     }
   };
 
+  // Permanently deletes a candidate's account (Firestore session doc + the underlying Firebase
+  // Auth user) - routed through the trusted server endpoint since a client can never delete
+  // another user's Auth account directly. The endpoint itself refuses to let an admin delete
+  // their own account, so no extra guard is needed here.
+  const deleteCandidate = async (targetUserId: string, targetEmail?: string) => {
+    const label = targetEmail || targetUserId;
+    if (!window.confirm(
+      language === 'FR'
+        ? `Supprimer définitivement le compte de ${label} ? Cette action est irréversible.`
+        : `Permanently delete the account for ${label}? This cannot be undone.`
+    )) return;
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const response = await fetch(`/api/admin/candidate/${targetUserId}`, {
+        method: 'DELETE',
+        headers: idToken ? { Authorization: `Bearer ${idToken}` } : {}
+      });
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || `Request failed with status ${response.status}`);
+      }
+      setAllUsers(prev => prev.filter(u => u.userId !== targetUserId));
+    } catch (err) {
+      console.error("Action deleteCandidate failed:", err);
+      alert(language === 'FR' ? "Échec de la suppression du compte." : "Failed to delete the account.");
+    }
+  };
+
   const resetUserTestsCount = async (targetUserId: string) => {
     if (!window.confirm(language === 'FR' ? "Réinitialiser le nombre d'examens tentés pour ce candidat ?" : "Are you sure you want to reset the exam attempts count for this candidate?")) return;
     try {
@@ -173,6 +201,7 @@ export function useAdminPanel({
     fetchAllUsersForAdmin,
     setUserAccessStatus,
     toggleUserRole,
+    deleteCandidate,
     resetUserTestsCount,
     saveGlobalConfig
   };

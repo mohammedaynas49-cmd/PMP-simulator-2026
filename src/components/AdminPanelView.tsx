@@ -34,6 +34,8 @@ interface AdminPanelViewProps {
   resetUserTestsCount: (targetUserId: string) => void;
   setUserAccessStatus: (targetUserId: string, nextAccess: 'granted' | 'restricted') => void;
   toggleUserRole: (targetUserId: string, currentRole: 'candidate' | 'admin' | undefined) => void;
+  deleteCandidate: (targetUserId: string, targetEmail?: string) => void;
+  currentUserUid?: string;
 
   // Exam Books & AI Study (knowledge) tab
   books: BookMeta[];
@@ -67,6 +69,8 @@ export default function AdminPanelView({
   resetUserTestsCount,
   setUserAccessStatus,
   toggleUserRole,
+  deleteCandidate,
+  currentUserUid,
   books,
   dragActive,
   bookUploading,
@@ -144,27 +148,27 @@ export default function AdminPanelView({
           {/* Visual Overview metrics cards row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
-              <span className="text-[10px] text-slate-400 font-black block uppercase tracking-wider">{language === 'FR' ? "Candidats inscrits" : "Total Enrolled Candidates"}</span>
+              <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "Candidats inscrits" : "Total Enrolled Candidates"}</span>
               <span className="text-2xl font-black text-indigo-950 block mt-1">{allUsers.length}</span>
               <span className="text-[10px] text-slate-450 block mt-1 font-bold">{language === 'FR' ? "Comptes candidats synchronisés" : "Synced candidate accounts"}</span>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
-              <span className="text-[10px] text-slate-400 font-black block uppercase tracking-wider">{language === 'FR' ? "En Attente d'Approbation" : "Pending Approval"}</span>
+              <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "En Attente d'Approbation" : "Pending Approval"}</span>
               <span className="text-2xl font-black text-amber-600 block mt-1">{allUsers.filter(u => u.accessStatus === 'pending').length}</span>
               <span className="text-[10px] text-slate-450 block mt-1 font-bold">{language === 'FR' ? "Nouveaux comptes à valider" : "New accounts awaiting review"}</span>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
-              <span className="text-[10px] text-slate-400 font-black block uppercase tracking-wider">{language === 'FR' ? "Accès Interdits / Suspendus" : "Suspended Accounts"}</span>
+              <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "Accès Interdits / Suspendus" : "Suspended Accounts"}</span>
               <span className="text-2xl font-black text-rose-600 block mt-1">{allUsers.filter(u => u.accessStatus === 'restricted').length}</span>
               <span className="text-[10px] text-slate-450 block mt-1 font-bold">{language === 'FR' ? "Candidats restreints" : "Restricted from playground"}</span>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
-              <span className="text-[10px] text-slate-400 font-black block uppercase tracking-wider">{language === 'FR' ? "Examens Démarrés" : "Exam Simulation Index"}</span>
+              <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "Examens Démarrés" : "Exam Simulation Index"}</span>
               <span className="text-2xl font-black text-amber-500 block mt-1">{allUsers.reduce((sum, u) => sum + (u.testsCount || 0), 0)}</span>
               <span className="text-[10px] text-slate-450 block mt-1 font-bold">{language === 'FR' ? "Toutes tentatives cumulées" : "All cumulative initiations"}</span>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
-              <span className="text-[10px] text-slate-400 font-black block uppercase tracking-wider">{language === 'FR' ? "Précision de la Classe" : "Cohort Average Score"}</span>
+              <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "Précision de la Classe" : "Cohort Average Score"}</span>
               <span className="text-2xl font-black text-emerald-650 block mt-1 text-emerald-600">
                 {allUsers.length > 0 ? Math.round(allUsers.reduce((sum, u) => sum + (u.scorePercentage || 0), 0) / allUsers.length) : 0}%
               </span>
@@ -179,14 +183,14 @@ export default function AdminPanelView({
                 <h3 className="text-xs font-black text-indigo-950 uppercase tracking-widest leading-none">
                   {language === 'FR' ? "Registre des Candidats & Supervision de Sécurité" : "Candidate Directory & Access Control"}
                 </h3>
-                <span className="text-[10px] text-slate-400 font-bold mt-1 block">
+                <span className="text-[10px] text-slate-500 font-bold mt-1 block">
                   {language === 'FR' ? "Analysez en temps réel la progression des élèves et changez leurs droits de simulation." : "Inspect candidates stats, toggle authorization and promote roles on the fly."}
                 </span>
               </div>
 
               <div className="flex gap-2 items-center flex-wrap">
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                     <Search className="w-3.5 h-3.5" />
                   </span>
                   <input
@@ -212,13 +216,13 @@ export default function AdminPanelView({
             {isLoadingAllUsers ? (
               <div className="flex flex-col items-center justify-center py-16 space-y-3">
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                <span className="text-xs text-slate-500 font-bold">{language === 'FR' ? "Chargement des dossiers candidats..." : "Reading candidate profiles..."}</span>
+                <span className="text-xs text-slate-600 font-bold">{language === 'FR' ? "Chargement des dossiers candidats..." : "Reading candidate profiles..."}</span>
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center py-16 space-y-2">
-                <AlertTriangle className="w-8 h-8 text-slate-400" />
+                <AlertTriangle className="w-8 h-8 text-slate-500" />
                 <span className="text-xs font-black text-indigo-950 block">{language === 'FR' ? "Aucun profil candidat correspondant" : "No profiles matching"}</span>
-                <span className="text-[10px] text-slate-500 max-w-sm block font-bold">
+                <span className="text-[10px] text-slate-600 max-w-sm block font-bold">
                   {language === 'FR' ? "Essayez une autre recherche ou patientez." : "Check spelling or wait until candidates login and sync."}
                 </span>
               </div>
@@ -226,7 +230,7 @@ export default function AdminPanelView({
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="bg-slate-50/70 text-[10px] uppercase font-mono tracking-wider text-slate-500 font-black border-b border-indigo-50">
+                    <tr className="bg-slate-50/70 text-[10px] uppercase font-mono tracking-wider text-slate-600 font-black border-b border-indigo-50">
                       <th className="p-3 text-left font-black">{language === 'FR' ? "Candidat" : "Candidate Email & ID"}</th>
                       <th className="p-3 text-left font-black">{language === 'FR' ? "Dernier Accès" : "Last Access"}</th>
                       <th className="p-3 text-left font-black">{language === 'FR' ? "Temps Travaillé" : "Study Tracker"}</th>
@@ -279,13 +283,13 @@ export default function AdminPanelView({
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[9px] font-mono font-bold text-slate-400 block shrink-0">ID: {u.userId.substring(0, 8)}...</span>
+                              <span className="text-[9px] font-mono font-bold text-slate-500 block shrink-0">ID: {u.userId.substring(0, 8)}...</span>
                             </div>
                           </td>
                           <td className="p-4 text-left font-mono text-[10px] text-slate-600">
                             <div className="space-y-0.5">
                               <span className="font-black text-slate-800 block">{formatAccessDate(u.lastLoginAt)}</span>
-                              <span className="text-[9px] text-slate-400 block">
+                              <span className="text-[9px] text-slate-500 block">
                                 {language === 'FR' ? 'Créé : ' : 'Created: '}{formatAccessDate(u.createdAt)}
                               </span>
                             </div>
@@ -293,7 +297,7 @@ export default function AdminPanelView({
                           <td className="p-4 text-left font-mono text-[10px] text-indigo-900">
                             <div className="space-y-0.5">
                               <span className="font-black">{durationStr}</span>
-                              <span className="text-[9px] text-slate-400 block">{answered} solved</span>
+                              <span className="text-[9px] text-slate-500 block">{answered} solved</span>
                             </div>
                           </td>
                           <td className="p-4 text-left font-mono">
@@ -385,6 +389,18 @@ export default function AdminPanelView({
                                   : "Admin"
                                 }
                               </button>
+                              {/* Permanently delete the account - never available for your own
+                                  row (also blocked server-side), so the Candidate Directory can't
+                                  be used to accidentally lock everyone out of admin access. */}
+                              {u.userId !== currentUserUid && (
+                                <button
+                                  onClick={() => deleteCandidate(u.userId, u.email)}
+                                  className="px-1.5 py-0.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 rounded-md text-[10px] font-black cursor-pointer transition-all flex items-center gap-1"
+                                  title={language === 'FR' ? "Supprimer définitivement ce compte" : "Permanently delete this account"}
+                                >
+                                  <Trash2 className="w-2.5 h-2.5" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -407,7 +423,7 @@ export default function AdminPanelView({
               <h3 className="text-xs font-black text-indigo-950 uppercase tracking-wider">
                 {language === 'FR' ? "Charger un Manuel ou Livre de Questions" : "Upload PMP Study Guides & Exams"}
               </h3>
-              <p className="text-[10px] text-slate-500 font-bold mt-0.5 leading-relaxed">
+              <p className="text-[10px] text-slate-600 font-bold mt-0.5 leading-relaxed">
                 {language === 'FR'
                   ? "Importez des fichiers PDF ou TXT contenant des résumés officiels (PMBOK) ou des examens d'entraînement. L'IA assimilera ces connaissances immédiatement !"
                   : "Upload PMBOK guidelines, study books, or sample exam folders. The AI agent will parse and familiarize itself with this content."}
@@ -450,7 +466,7 @@ export default function AdminPanelView({
                       ? (language === 'FR' ? "Analyse du document..." : "AI Familiarization in progress...")
                       : (language === 'FR' ? "Sélectionnez votre PDF / TXT" : "Upload your PMP Exam file")}
                   </h4>
-                  <p className="text-[9px] text-slate-500 leading-normal max-w-xs mx-auto font-bold">
+                  <p className="text-[9px] text-slate-600 leading-normal max-w-xs mx-auto font-bold">
                     {bookUploading
                       ? (language === 'FR' ? "Découpage intelligent en zones d'entraînement RAG pour l'évaluation. Veuillez patienter." : "Parsing and indexing the PDF layout recursively. This enables fully grounded scenario QA.")
                       : (language === 'FR' ? "Gros livres supportés jusqu'à 150 Mo. Cliquez pour naviguer." : "Support booklets or guides up to 150MB. Drag and drop file or click browse.")
@@ -511,7 +527,7 @@ export default function AdminPanelView({
               </h4>
 
               {books.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 font-bold text-[11px] space-y-2">
+                <div className="py-12 text-center text-slate-500 font-bold text-[11px] space-y-2">
                   <div className="text-xl">📚</div>
                   <p>{language === 'FR' ? "Aucun livre personnalisé n'est encore hébergé." : "No custom booklets are active in this workspace."}</p>
                 </div>
@@ -524,7 +540,7 @@ export default function AdminPanelView({
                     >
                       <div className="min-w-0 flex-1">
                         <span className="text-xs font-black text-slate-800 block truncate" title={b.name}>{b.name}</span>
-                        <div className="flex items-center gap-2.5 mt-1 text-[10px] text-slate-400 font-mono font-bold">
+                        <div className="flex items-center gap-2.5 mt-1 text-[10px] text-slate-500 font-mono font-bold">
                           <span className="text-indigo-650 font-black">{b.pageCount} pages</span>
                           <span>•</span>
                           <span>{b.chunkCount} RAG segments</span>
@@ -535,7 +551,7 @@ export default function AdminPanelView({
 
                       <button
                         onClick={() => deleteBook(b.id)}
-                        className="p-2 rounded-xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer border border-slate-200"
+                        className="p-2 rounded-xl bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer border border-slate-200"
                         title={language === 'FR' ? "Supprimer le livre" : "Delete study file"}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -555,7 +571,7 @@ export default function AdminPanelView({
             <h3 className="text-xs font-black text-indigo-950 uppercase tracking-wider">
               {language === 'FR' ? "Limites de la Simulation" : "Global Simulator Quotas"}
             </h3>
-            <p className="text-[10px] text-slate-500 font-bold mt-0.5">
+            <p className="text-[10px] text-slate-600 font-bold mt-0.5">
               {language === 'FR' ? "Ces valeurs s'appliquent de manière obligatoire à tous les candidats." : "Enforced system-wide constraints for all candidate profiles."}
             </p>
           </div>
@@ -574,7 +590,7 @@ export default function AdminPanelView({
                 onChange={(e) => setAppTimerLimitMinutes(Number(e.target.value))}
                 className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-indigo-950 outline-hidden focus:ring-2 focus:ring-indigo-400 focus:bg-white font-bold"
               />
-              <p className="text-[9px] text-slate-400 font-bold leading-relaxed">
+              <p className="text-[9px] text-slate-500 font-bold leading-relaxed">
                 {language === 'FR' ? "Le temps réglementaire de l'examen standard PMP de 180 questions est défini à 230 minutes." : "Standard certified PMP duration is 230 minutes."}
               </p>
             </div>
@@ -592,7 +608,7 @@ export default function AdminPanelView({
                 onChange={(e) => setAppTestsLimit(Number(e.target.value))}
                 className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-indigo-950 outline-hidden focus:ring-2 focus:ring-indigo-400 focus:bg-white font-bold"
               />
-              <p className="text-[9px] text-slate-400 font-bold leading-relaxed">
+              <p className="text-[9px] text-slate-500 font-bold leading-relaxed">
                 {language === 'FR' ? "Une fois ce quota dépassé, le candidat ne pourra plus lancer de nouvel simulacre à moins d'un reset de l'administrateur." : "Exceeding candidates cannot trigger new formal mock simulator rooms."}
               </p>
             </div>

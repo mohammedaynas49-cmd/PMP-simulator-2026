@@ -86,7 +86,17 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
   const [prefQuestionType, setPrefQuestionType] = useState<'situational' | 'definition'>('situational');
   const [prefGenerationSource, setPrefGenerationSource] = useState<'docs' | 'ai' | 'combine'>('combine');
   const [sessionCompletedCount, setSessionCompletedCount] = useState<number>(0);
-  
+
+  // Domain Practice session tracking: a candidate can optionally fix a target question count
+  // (null = unlimited) and always sees elapsed time for the current session. Reset on launch and
+  // on Quit Practice (handleClosePractice / handleLaunchDomainPractice below).
+  const [domainTargetCount, setDomainTargetCount] = useState<number | null>(null);
+  const [domainSessionAnswered, setDomainSessionAnswered] = useState<number>(0);
+  const [domainSessionCorrect, setDomainSessionCorrect] = useState<number>(0);
+  const [domainSessionElapsedSeconds, setDomainSessionElapsedSeconds] = useState<number>(0);
+  const [domainSessionStartedAt, setDomainSessionStartedAt] = useState<number | null>(null);
+  const [domainSessionComplete, setDomainSessionComplete] = useState<boolean>(false);
+
   // Book Study Companion: state + handlers live in useBookCompanion (shared identically by the
   // Study Books tab and the Admin Control Panel's "Exam Books & AI Study" tab). Destructured
   // under their original names so every existing prop-wiring call site below stays unchanged.
@@ -217,6 +227,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     fetchAllUsersForAdmin,
     setUserAccessStatus,
     toggleUserRole,
+    deleteCandidate,
     resetUserTestsCount,
     saveGlobalConfig
   } = useAdminPanel({
@@ -465,27 +476,51 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     return () => clearInterval(interval);
   }, [isExamActive, examTimeRemaining, isExamSubmitted]);
 
-  // Filter list helper
+  // Domain Practice elapsed-time stopwatch: ticks once a session has been launched, stops once
+  // the target count is reached (time-used display, no imposed limit - see AskUserQuestion answer).
+  useEffect(() => {
+    if (!domainSessionStartedAt || domainSessionComplete) return;
+    const interval = setInterval(() => {
+      setDomainSessionElapsedSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [domainSessionStartedAt, domainSessionComplete]);
+
+  // Filter list helper. Deliberately does NOT auto-trigger question generation - checking a
+  // domain in the sidebar only stages the selection; the candidate explicitly launches (or backs
+  // out via "Quit Practice") from the practice screen's own Launch button, see DomainPracticeView.
   const toggleDomainFilter = (domain: PMPDomain) => {
-    // The side effect (network call) must live outside the setState updater: React 19's
-    // <StrictMode> intentionally double-invokes updater functions in development to catch
-    // impure ones, which was silently firing this exact question-generation request twice per
-    // click (visible as duplicate POST /api/questions/generate calls).
-    const wasEmpty = selectedDomains.length === 0;
     const next = selectedDomains.includes(domain)
       ? selectedDomains.filter(d => d !== domain)
       : [...selectedDomains, domain];
     setSelectedDomains(next);
-    // If expanding from clean landing view to practicing, load first question immediately
-    if (wasEmpty && next.length > 0) {
-      fetchNewQuestion(next);
-    }
   };
 
   // Direct landing triggers to practice a specific domain
   const handleStartDomainPractice = (domain: PMPDomain) => {
     setSelectedDomains([domain]);
     fetchNewQuestion([domain]);
+  };
+
+  // Explicit launch - the only path that actually starts question generation for Domain
+  // Practice, whether reached via the landing screen's "Start Targeted Training" button or the
+  // sidebar's staged domain checkboxes. Resets this session's answered count/timer/target-reached
+  // flag so re-launching after a completed or abandoned session starts clean.
+  const handleLaunchDomainPractice = (
+    overrideDomains?: PMPDomain[],
+    customSub?: string,
+    customPh?: string,
+    customMeth?: string
+  ) => {
+    setDomainSessionAnswered(0);
+    setDomainSessionCorrect(0);
+    setDomainSessionElapsedSeconds(0);
+    setDomainSessionStartedAt(Date.now());
+    setDomainSessionComplete(false);
+    if (overrideDomains) {
+      setSelectedDomains(overrideDomains);
+    }
+    fetchNewQuestion(overrideDomains, customSub, customPh, customMeth);
   };
 
   // Close and clean/reset the active training state completely back to preferences menu
@@ -499,6 +534,12 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     setPrefQuestionType('situational');
     setPrefGenerationSource('combine');
     setSessionCompletedCount(0);
+    setDomainTargetCount(null);
+    setDomainSessionAnswered(0);
+    setDomainSessionCorrect(0);
+    setDomainSessionElapsedSeconds(0);
+    setDomainSessionStartedAt(null);
+    setDomainSessionComplete(false);
   };
 
   // Generate / Fetch next target PMP question
@@ -649,7 +690,19 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     // Local state increments
     const newTotalAnswered = totalAnswered + 1;
     const newAnsweredMap = { ...answeredMap, [qId]: selectedOption };
-    
+
+    // Domain Practice session tracking: this handler only ever fires for Domain Practice answers
+    // (see DomainPracticeView, the only place it's wired to) - advance the session counter and
+    // flip to the summary screen once a fixed target count is reached.
+    const newDomainSessionAnswered = domainSessionAnswered + 1;
+    setDomainSessionAnswered(newDomainSessionAnswered);
+    if (isCorrect) {
+      setDomainSessionCorrect(prev => prev + 1);
+    }
+    if (domainTargetCount !== null && newDomainSessionAnswered >= domainTargetCount) {
+      setDomainSessionComplete(true);
+    }
+
     let newIncorrect = [...incorrectIds];
     if (!isCorrect) {
       newIncorrect.push(qId);
@@ -1089,7 +1142,6 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
             texts={texts}
             isAdmin={isAdmin}
             selectedDomains={selectedDomains}
-            setSelectedDomains={setSelectedDomains}
             handleClosePractice={handleClosePractice}
             prefQuestionType={prefQuestionType}
             setPrefQuestionType={setPrefQuestionType}
@@ -1104,12 +1156,20 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
             prefPhase={prefPhase}
             setPrefPhase={setPrefPhase}
             fetchNewQuestion={fetchNewQuestion}
+            handleLaunchDomainPractice={handleLaunchDomainPractice}
             isLoadingNew={isLoadingNew}
             isGenerating={isGenerating}
             currentQuestion={currentQuestion}
             handleAnswerSubmit={handleAnswerSubmit}
             answeredMap={answeredMap}
             mastery={mastery}
+            domainTargetCount={domainTargetCount}
+            setDomainTargetCount={setDomainTargetCount}
+            domainSessionAnswered={domainSessionAnswered}
+            domainSessionCorrect={domainSessionCorrect}
+            domainSessionElapsedSeconds={domainSessionElapsedSeconds}
+            domainSessionComplete={domainSessionComplete}
+            onContinuePastTarget={() => setDomainSessionComplete(false)}
           />
         )}
 
@@ -1252,6 +1312,8 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
             resetUserTestsCount={resetUserTestsCount}
             setUserAccessStatus={setUserAccessStatus}
             toggleUserRole={toggleUserRole}
+            deleteCandidate={deleteCandidate}
+            currentUserUid={user?.uid}
             books={books}
             dragActive={dragActive}
             bookUploading={bookUploading}

@@ -93,7 +93,7 @@ export default function DefinitionsSearchView({ language, isAdmin }: Definitions
         {/* Search bar */}
         <form onSubmit={handleSubmit} className="flex gap-2">
           <div className="flex-1 relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               id="definition_search_input"
               type="text"
@@ -150,7 +150,7 @@ export default function DefinitionsSearchView({ language, isAdmin }: Definitions
                 <span className="text-xs font-black text-indigo-950 block">
                   {language === 'FR' ? "Aucune définition trouvée" : "No definition found"}
                 </span>
-                <span className="text-[11px] text-slate-500 max-w-sm block leading-relaxed font-bold mx-auto">
+                <span className="text-[11px] text-slate-600 max-w-sm block leading-relaxed font-bold mx-auto">
                   {lastSearchedTerm}
                 </span>
               </div>
@@ -190,7 +190,7 @@ export default function DefinitionsSearchView({ language, isAdmin }: Definitions
                 <span className="text-xs font-black text-indigo-950 block">
                   {language === 'FR' ? "Prêt à chercher" : "Ready to search"}
                 </span>
-                <span className="text-[11px] text-slate-500 max-w-sm block leading-relaxed font-bold mx-auto">
+                <span className="text-[11px] text-slate-600 max-w-sm block leading-relaxed font-bold mx-auto">
                   {language === 'FR' ? "Tapez un terme ou un concept PMP ci-dessus, ou cliquez sur un exemple." : "Type a PMP term or concept above, or click an example."}
                 </span>
               </div>

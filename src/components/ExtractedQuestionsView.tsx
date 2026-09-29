@@ -87,7 +87,7 @@ export default function ExtractedQuestionsView({
                     ? (language === 'FR' ? "Résultats de l'examen" : "Exam Results")
                     : (language === 'FR' ? "Examen Chronométré" : "Timed Exam")}
                 </h3>
-                <p className="text-[10px] text-slate-500 font-bold">
+                <p className="text-[10px] text-slate-600 font-bold">
                   {examSubmitted
                     ? (language === 'FR' ? "Révisez chaque question avec la correction complète" : "Review each question with full correctness revealed")
                     : (language === 'FR' ? `${answeredCount} / ${examQuestions.length} répondues` : `${answeredCount} / ${examQuestions.length} answered`)}
@@ -138,14 +138,14 @@ export default function ExtractedQuestionsView({
                     <button
                       onClick={() => setExamIndex(i => Math.max(0, i - 1))}
                       disabled={examIndex === 0}
-                      className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                      className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                     >
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => setExamIndex(i => Math.min(examQuestions.length - 1, i + 1))}
                       disabled={examIndex >= examQuestions.length - 1}
-                      className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                      className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                     >
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
@@ -180,7 +180,7 @@ export default function ExtractedQuestionsView({
         <h1 className="text-2xl sm:text-3xl font-black text-indigo-950 tracking-tight leading-tight">
           {language === 'FR' ? "Questions Extraites des Documents" : "Questions Extracted From Your Documents"}
         </h1>
-        <p className="text-sm text-slate-500 max-w-2xl mx-auto font-medium">
+        <p className="text-sm text-slate-600 max-w-2xl mx-auto font-medium">
           {language === 'FR'
             ? "Ce sont les questions réellement présentes dans les documents PMP téléversés par l'administrateur, pas des questions générées par IA."
             : "These are the actual questions found inside the PMP documents your administrator uploaded, not AI-generated ones."}
@@ -228,14 +228,14 @@ export default function ExtractedQuestionsView({
                   <button
                     onClick={() => setIndex(i => Math.max(0, i - 1))}
                     disabled={index === 0}
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setIndex(i => Math.min(questions.length - 1, i + 1))}
                     disabled={index >= questions.length - 1}
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -262,7 +262,7 @@ export default function ExtractedQuestionsView({
                 <span className="text-xs font-black text-indigo-950 block">
                   {language === 'FR' ? "Aucune question disponible pour le moment" : "No questions available yet"}
                 </span>
-                <span className="text-[10px] text-slate-500 max-w-sm block leading-relaxed font-bold mx-auto">
+                <span className="text-[10px] text-slate-600 max-w-sm block leading-relaxed font-bold mx-auto">
                   {language === 'FR'
                     ? "Votre administrateur n'a pas encore téléversé de document contenant des questions détectables."
                     : "Your administrator hasn't uploaded a document with detectable questions yet."}

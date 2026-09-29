@@ -78,15 +78,19 @@ async function main() {
   await page.waitForSelector("#sidebar_main", { timeout: 15000 });
   await page.screenshot({ path: `${OUT_DIR}/02_dashboard_domain_mode.png` });
 
-  logStep("3. Select a domain and start practice");
-  // The domain checklist only appears once 'domain' mode is selected (default). Selecting the
-  // first domain auto-loads a question (see toggleDomainFilter in Dashboard.tsx) - there's no
-  // separate "start" button. Click the label's text, not .check() on the input directly: some
-  // automation strategies can flip the native checkbox without dispatching a real click, which
-  // silently never fires React's onChange at all.
+  logStep("3. Select a domain and explicitly launch practice");
+  // The domain checklist only appears once 'domain' mode is selected (default). Checking a domain
+  // deliberately does NOT auto-launch generation (see toggleDomainFilter in Dashboard.tsx) - the
+  // candidate must explicitly launch or back out, see DomainPracticeView's "Ready to start" state.
+  // Click the label's text, not .check() on the input directly: some automation strategies can
+  // flip the native checkbox without dispatching a real click, which silently never fires React's
+  // onChange at all.
   const peopleLabel = page.locator("#sidebar_nav label", { hasText: "People" });
   await peopleLabel.waitFor({ state: "visible", timeout: 10000 });
   await peopleLabel.locator("span").click();
+  const launchBtn = page.locator("#launch_staged_domain_practice_btn");
+  await launchBtn.waitFor({ state: "visible", timeout: 10000 });
+  await launchBtn.click();
 
   logStep("4. Answer the practice question once it loads");
   const optionA = page.locator("#option_A_btn");
