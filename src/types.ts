@@ -23,6 +23,10 @@ export interface PMPQuestion {
   case_study_scenario?: string;
   series_type?: 'case_study' | 'scenario' | 'final_series';
   series_label?: string;
+  /** Set only on case studies extracted from an uploaded file (see server.ts
+   * extractCaseStudiesFromBook) - the total question count for THIS specific case study, so
+   * Domain Practice can size its session target to match instead of an unrelated fixed preset. */
+  case_study_total_questions?: number;
   /** True while this exam slot still holds a locally-cycled placeholder awaiting a unique AI-generated replacement. */
   isPlaceholder?: boolean;
 }

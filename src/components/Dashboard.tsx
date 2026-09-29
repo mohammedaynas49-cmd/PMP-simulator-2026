@@ -614,6 +614,15 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
 
     const currentSessionCount = overrideDomains ? 0 : sessionCompletedCount;
     const excludeIds = Object.keys(answeredMap);
+    // Reliable "is this the very first fetch of a session" signal - `overrideDomains` is only
+    // passed by the landing screen's single-click "Start Targeted Training" path, NOT by the
+    // more common sidebar-checkbox-then-explicit-Launch flow (handleLaunchDomainPractice calls
+    // fetchNewQuestion() with no arguments there), so it under-fires for freshDomainSession/
+    // target-count-override purposes below. handleLaunchDomainPractice always resets
+    // domainSessionAnswered to 0 right before calling this, and nothing can answer a question
+    // before the first one is even displayed, so domainSessionAnswered === 0 correctly identifies
+    // the first fetch of a session across BOTH launch paths.
+    const isFreshDomainSession = domainSessionAnswered === 0;
 
     try {
       const response = await authFetch('/api/questions/generate', {
@@ -635,11 +644,11 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
            // so the restriction holds regardless of client state.
            generationSource: isAdmin ? prefGenerationSource : 'docs',
            questionType: prefQuestionType,
-           // True only on the very first fetch of a newly-launched session (same signal already
-           // used for currentSessionCount above) - lets a "Case Studies" session start fresh
-           // instead of being forced to resume a case study left incomplete by a past session
-           // (see the server-side comment in /api/questions/generate for why this matters).
-           freshDomainSession: !!overrideDomains
+           // True only on the very first fetch of a newly-launched session - lets a "Case
+           // Studies" session start fresh instead of being forced to resume a case study left
+           // incomplete by a past session (see the server-side comment in
+           // /api/questions/generate for why this matters).
+           freshDomainSession: isFreshDomainSession
          })
        });
 
@@ -647,8 +656,18 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
       if (result && result.question) {
         setCurrentQuestion(result.question);
         setIsGenerating(result.fallback === false);
-        if (overrideDomains) {
+        if (isFreshDomainSession) {
           setSessionCompletedCount(0);
+          // A real case study extracted from an uploaded file knows exactly how many questions
+          // it has (case_study_total_questions) - size THIS session's target to match it exactly,
+          // overriding whatever preset (5/10/20/50) the candidate picked, so the session ends
+          // precisely when the case study does, not partway through or with leftovers. Only
+          // applies at session start; if no real case study is available and an AI-drafted
+          // fallback question is served instead (no total known), the manually chosen preset
+          // still applies as before.
+          if (result.question.question_focus_type === 'case_study' && typeof result.question.case_study_total_questions === 'number') {
+            setDomainTargetCount(result.question.case_study_total_questions);
+          }
         } else {
           setSessionCompletedCount(prev => prev + 1);
         }

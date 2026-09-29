@@ -923,6 +923,10 @@ async function startServer() {
               case_study_scenario: cs.scenario_text,
               series_type: "case_study",
               series_label: `Q${qIndex + 1}/${cs.questions.length}`,
+              // Explicit numeric total (not just parsed from series_label) so the client can size
+              // the practice session's target count to exactly how many questions this specific
+              // case study has, instead of an unrelated fixed preset (5/10/20/50).
+              case_study_total_questions: cs.questions.length,
               question_focus_type: "case_study"
             });
             extractedCount++;
@@ -2138,6 +2142,90 @@ async function startServer() {
     }
   });
 
+  // Case studies are extracted verbatim in whatever language the uploaded file was written in
+  // (typically English) - a French-language candidate needs the shared narrative and its
+  // questions to read naturally in French too, not just the surrounding app UI. Translated once
+  // per question and cached onto the question's own Firestore doc (fr_* fields) so a repeat serve
+  // (a retry, or another French candidate reaching the same question) doesn't re-pay the Gemini
+  // cost or risk a slightly different re-translation each time. Best-effort: falls back to
+  // serving the English original untouched if Gemini is unavailable or translation fails, rather
+  // than blocking the question from being served at all.
+  async function translateCaseStudyQuestionToFrench(q: any): Promise<any> {
+    if (q.fr_scenario && q.fr_case_study_scenario && Array.isArray(q.fr_options) && q.fr_options.length === q.options.length) {
+      return {
+        ...q,
+        case_study_title: q.fr_case_study_title,
+        case_study_scenario: q.fr_case_study_scenario,
+        scenario: q.fr_scenario,
+        options: q.fr_options,
+        explanation: q.fr_explanation || q.explanation
+      };
+    }
+
+    const client = getGeminiClient();
+    if (!client) return q;
+
+    try {
+      const response = await generateContentWithRetry(client, {
+        model: "gemini-3.5-flash",
+        contents: `
+        Translate the following PMP case study content into professional, natural French (the
+        style used in official PMBOK French translations), preserving the exact meaning - do not
+        add, remove, or alter any information, and keep any acronyms in parentheses (e.g. "(EV)")
+        unchanged.
+
+        Case study title: ${q.case_study_title || ""}
+        Shared narrative: ${q.case_study_scenario || ""}
+        Question: ${q.scenario || ""}
+        Options: ${JSON.stringify(q.options || [])}
+        Explanation: ${q.explanation || ""}
+        `,
+        config: {
+          temperature: 0.1,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              case_study_title: { type: Type.STRING },
+              case_study_scenario: { type: Type.STRING },
+              scenario: { type: Type.STRING },
+              options: { type: Type.ARRAY, items: { type: Type.STRING } },
+              explanation: { type: Type.STRING }
+            },
+            required: ["case_study_title", "case_study_scenario", "scenario", "options", "explanation"]
+          }
+        }
+      }, 2);
+
+      const rawText = response.text;
+      if (!rawText) return q;
+      const translated = JSON.parse(rawText);
+      if (!translated || !Array.isArray(translated.options) || translated.options.length !== q.options.length) {
+        return q; // malformed - fall back to English rather than risk a mismatched option count
+      }
+
+      const frFields = {
+        fr_case_study_title: translated.case_study_title,
+        fr_case_study_scenario: translated.case_study_scenario,
+        fr_scenario: translated.scenario,
+        fr_options: translated.options,
+        fr_explanation: translated.explanation
+      };
+      await doc(db, "questions", q.question_id).update(frFields).catch(() => {});
+      return {
+        ...q,
+        case_study_title: frFields.fr_case_study_title,
+        case_study_scenario: frFields.fr_case_study_scenario,
+        scenario: frFields.fr_scenario,
+        options: frFields.fr_options,
+        explanation: frFields.fr_explanation
+      };
+    } catch (err) {
+      console.error(`[Case Study Translation] Failed to translate "${q.question_id}":`, err);
+      return q;
+    }
+  }
+
   // Dynamic Two-Pass question generator endpoint
   app.post("/api/questions/generate", requireAuth, generationLimiter, async (req, res) => {
     const { domain, methodology, contextTag, language, subject, phase, sessionCompletedCount, excludeIds, questionType, generationSource, freshDomainSession } = req.body;
@@ -2329,9 +2417,10 @@ async function startServer() {
             const chosenKey = candidateKeys[Math.floor(Math.random() * candidateKeys.length)];
             const groupQuestions = groups.get(chosenKey)!.sort((a, b) => (a.question_id || "").localeCompare(b.question_id || ""));
             const picked = groupQuestions[0];
-            console.log(`[Case Study Extraction] Serving a real question from "${caseStudyBook.data().name}" (${unused.length} unused left, continuing=${continuingKeys.length > 0}).`);
+            const servedQuestion = isFrench ? await translateCaseStudyQuestionToFrench(picked) : picked;
+            console.log(`[Case Study Extraction] Serving a real question from "${caseStudyBook.data().name}" (${unused.length} unused left, continuing=${continuingKeys.length > 0}, translated=${isFrench}).`);
             return res.json({
-              question: { ...picked, question_focus_type: "case_study" },
+              question: { ...servedQuestion, question_focus_type: "case_study" },
               fallback: false,
               message: isFrench
                 ? "Question extraite de votre document d'études de cas."

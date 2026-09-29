@@ -182,6 +182,13 @@ export default function DomainPracticeView({
                     ? "Fixez un nombre de questions pour cette session, ou entraînez-vous sans limite."
                     : "Fix how many questions you want to work through this session, or practice without a limit."}
                 </p>
+                {prefQuestionType === 'case_study' && (
+                  <p className="text-[11px] text-amber-700 font-bold bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                    📚 {language === 'FR'
+                      ? "Pour les Études de Cas, ce choix sert de repli si aucune étude de cas réelle n'est disponible - une étude de cas extraite d'un fichier fixe elle-même son nombre exact de questions."
+                      : "For Case Studies, this choice is only a fallback if no real case study is available - a case study extracted from a file sets its own exact question count."}
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-3">
                   {QUESTION_COUNT_PRESETS.map((count) => (
                     <button
