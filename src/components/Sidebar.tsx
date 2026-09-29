@@ -167,7 +167,7 @@ export default function Sidebar({
       {/* Header Profile Info */}
       <div className="p-6 border-b border-indigo-50 flex flex-col gap-4" id="sidebar_profile">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white font-black ring-4 ring-indigo-550/10 shadow-md overflow-hidden shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white font-black ring-4 ring-indigo-500/10 shadow-md overflow-hidden shrink-0">
             {user?.photoURL ? (
               <img src={user.photoURL} alt="profile" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             ) : (
@@ -231,7 +231,7 @@ export default function Sidebar({
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <BookOpen className={`w-4 h-4 ${selectedMode === 'domain' ? 'text-violet-650' : 'text-slate-500'}`} />
+                <BookOpen className={`w-4 h-4 ${selectedMode === 'domain' ? 'text-violet-600' : 'text-slate-500'}`} />
                 <span className="text-sm">{texts.domainPractice}</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-600 font-mono font-black shadow-xxs">ECO</span>
@@ -249,7 +249,7 @@ export default function Sidebar({
                 <Award className={`w-4 h-4 ${selectedMode === 'exam' ? 'text-rose-600' : 'text-slate-500'}`} />
                 <span className="text-sm">{texts.fullMock}</span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-rose-200 text-rose-550 font-mono font-black shadow-xxs">230m</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-rose-200 text-rose-500 font-mono font-black shadow-xxs">230m</span>
             </button>
             <button
               id="mode_extracted_btn"
@@ -279,7 +279,7 @@ export default function Sidebar({
                 <Shuffle className={`w-4 h-4 ${selectedMode === 'matching' ? 'text-violet-600' : 'text-slate-500'}`} />
                 <span className="text-sm">{texts.matchingExercise}</span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-550 font-mono font-black shadow-xxs">4-5</span>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-500 font-mono font-black shadow-xxs">4-5</span>
             </button>
             <button
               id="mode_definitions_btn"
@@ -310,7 +310,7 @@ export default function Sidebar({
                   <BookOpen className={`w-4 h-4 ${selectedMode === 'book' ? 'text-violet-600' : 'text-slate-500'}`} />
                   <span className="text-sm">{texts.bookCompanion}</span>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-550 font-mono font-black shadow-xxs">PDF</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-500 font-mono font-black shadow-xxs">PDF</span>
               </button>
             )}
             {isAdmin && (
@@ -327,7 +327,7 @@ export default function Sidebar({
                   <Settings className={`w-4 h-4 ${selectedMode === 'admin' ? 'text-red-500' : 'text-slate-500'}`} />
                   <span className="text-sm">{texts.adminControl}</span>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-red-200 text-red-550 font-mono font-black shadow-xxs">CTRL</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-red-200 text-red-500 font-mono font-black shadow-xxs">CTRL</span>
               </button>
             )}
           </div>
@@ -351,7 +351,7 @@ export default function Sidebar({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleDomain(domain)}
-                      className="accent-violet-600 rounded border-slate-350 bg-white h-4 w-4"
+                      className="accent-violet-600 rounded border-slate-300 bg-white h-4 w-4"
                     />
                     <span className="text-sm text-slate-700 font-bold">{getDomainDisplayName(domain)}</span>
                   </label>
@@ -384,7 +384,7 @@ export default function Sidebar({
           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
             <Zap className="w-3.5 h-3.5 text-violet-500" /> {texts.analytics}
           </h4>
-          <div className="bg-gradient-to-tr from-indigo-50/30 to-violet-50/20 p-4 rounded-xl border border-indigo-150/40 space-y-4">
+          <div className="bg-gradient-to-tr from-indigo-50/30 to-violet-50/20 p-4 rounded-xl border border-indigo-100/40 space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white p-2.5 rounded-lg border border-slate-200 text-center shadow-sm">
                 <div className="text-xl font-extrabold font-mono text-violet-600">{totalAnswered}</div>
@@ -405,7 +405,7 @@ export default function Sidebar({
                 return (
                   <div key={domain} className="space-y-1.5">
                     <div className="flex justify-between items-center text-[11px] font-mono leading-none">
-                      <span className="text-slate-750 font-bold truncate w-24">
+                      <span className="text-slate-700 font-bold truncate w-24">
                         {getDomainDisplayName(domain)}
                       </span>
                       <span className="text-slate-500 font-semibold">
@@ -418,7 +418,7 @@ export default function Sidebar({
                       <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden border border-slate-300/30">
                         <div 
                           className={`h-full transition-all duration-500 rounded-full ${
-                            ratio >= 75 ? 'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-sm' : ratio >= 50 ? 'bg-gradient-to-r from-amber-400 to-orange-500' : stats.answered > 0 ? 'bg-gradient-to-r from-rose-450 to-pink-500' : 'bg-slate-200'
+                            ratio >= 75 ? 'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-sm' : ratio >= 50 ? 'bg-gradient-to-r from-amber-400 to-orange-500' : stats.answered > 0 ? 'bg-gradient-to-r from-rose-400 to-pink-500' : 'bg-slate-200'
                           }`}
                           style={{ width: `${stats.answered > 0 ? ratio : 0}%` }}
                         />

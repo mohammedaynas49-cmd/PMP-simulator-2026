@@ -932,14 +932,14 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         <h2 className="text-2xl font-black text-rose-950 tracking-tight">
           {language === 'FR' ? "Accès Limité / Restreint" : "Simulator Access Restricted"}
         </h2>
-        <p className="text-sm text-slate-505 font-bold leading-relaxed">
+        <p className="text-sm text-slate-500 font-bold leading-relaxed">
           {language === 'FR' 
             ? "Votre compte d'entraînement a été suspendu ou limité par l'administrateur de l'application. Veuillez le contacter pour rétablir vos droits d'accès à la simulation d'examen PMP."
             : "Your trial simulator account has been temporarily restricted or suspended by the system administrator. Please reach out to your instructor or admin to re-enable authorization."}
         </p>
       </div>
-      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-250/60 w-full flex items-center justify-center gap-3">
-        <Bot className="w-5 h-5 text-indigo-550 shrink-0" />
+      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/60 w-full flex items-center justify-center gap-3">
+        <Bot className="w-5 h-5 text-indigo-500 shrink-0" />
         <span className="text-xs text-slate-600 font-bold">
           {language === 'FR' 
             ? "Courriel de l'élève : " 
@@ -958,7 +958,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         <h2 className="text-2xl font-black text-slate-800 tracking-tight">
           {language === 'FR' ? "Limite de Simulations Atteinte" : "Simulated Exam Limit Reached"}
         </h2>
-        <p className="text-xs text-slate-505 font-bold leading-relaxed">
+        <p className="text-xs text-slate-500 font-bold leading-relaxed">
           {language === 'FR' 
             ? `Vous avez atteint la limite d'essais pour l'examen blanc de 180 questions (${testsCount} / ${appTestsLimit} examens démarrés). Veuillez contacter l'administrateur pour augmenter vos droits de simulation.`
             : `You have successfully consumed your exam simulation limits (${testsCount} out of ${appTestsLimit} attempts initiated). Reach out to your class administrator to increase your exam session quota.`}
@@ -968,13 +968,13 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         <span className="text-[11px] text-indigo-950 font-black block mb-1">
           {language === 'FR' ? "Statut de votre licence :" : "Registration Trial Status:"}
         </span>
-        <div className="flex justify-between items-center px-4 font-mono text-[11px] text-slate-650 font-bold mt-2">
+        <div className="flex justify-between items-center px-4 font-mono text-[11px] text-slate-600 font-bold mt-2">
           <span>{language === 'FR' ? "Examens Démarrés" : "Initiated Exams"}:</span>
-          <span className="text-rose-605 font-black">{testsCount}</span>
+          <span className="text-rose-600 font-black">{testsCount}</span>
         </div>
-        <div className="flex justify-between items-center px-4 font-mono text-[11px] text-slate-650 font-bold mt-1">
+        <div className="flex justify-between items-center px-4 font-mono text-[11px] text-slate-600 font-bold mt-1">
           <span>{language === 'FR' ? "Quota Autorisé" : "Max Trial Quota"}:</span>
-          <span className="text-indigo-655 font-black">{appTestsLimit}</span>
+          <span className="text-indigo-600 font-black">{appTestsLimit}</span>
         </div>
       </div>
     </div>
@@ -1094,7 +1094,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         {/* Persistent Elite Admin Portal Switcher */}
         {isAdmin && (
           <div className="max-w-4xl mx-auto w-full mb-6 z-20" id="persistent_admin_bar">
-            <div className="bg-gradient-to-r from-red-650 via-orange-500 to-indigo-600 p-4 rounded-3xl border border-red-200/30 shadow-md flex justify-between items-center text-white flex-wrap gap-4">
+            <div className="bg-gradient-to-r from-red-600 via-orange-500 to-indigo-600 p-4 rounded-3xl border border-red-200/30 shadow-md flex justify-between items-center text-white flex-wrap gap-4">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-3 w-3 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>

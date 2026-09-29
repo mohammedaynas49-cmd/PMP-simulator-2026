@@ -205,7 +205,7 @@ export default function BookCompanionView({
 
               {!bookUploading && (
                 <button
-                  className="bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-650 text-white font-extrabold px-6 py-3 rounded-2xl text-sm shadow-md hover:scale-105 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center gap-2"
+                  className="bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 text-white font-extrabold px-6 py-3 rounded-2xl text-sm shadow-md hover:scale-100 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center gap-2"
                 >
                   {language === 'FR' ? "Sélectionner un livre" : "Select Study PDF / Book"}
                   <ArrowRight className="w-4 h-4" />

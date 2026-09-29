@@ -176,7 +176,7 @@ export default function QuestionCard({
             <span className="text-xs font-black px-3.5 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-full font-mono shadow-sm animate-pulse">
               {question.eco_domain}
             </span>
-            <span className="text-xs font-bold px-3 py-1 bg-amber-50 text-amber-805 border border-amber-200 rounded-full font-mono">
+            <span className="text-xs font-bold px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full font-mono">
               {question.methodology}
             </span>
             {isAdmin && question.grounded_book_name && (
@@ -245,7 +245,7 @@ export default function QuestionCard({
           const revealCorrectness = isSubmitted && !lockFeedback;
 
           // Define modern background states for response feedback
-          let optionStyles = "bg-white border-indigo-100 text-slate-800 hover:border-violet-350 hover:bg-violet-50/30";
+          let optionStyles = "bg-white border-indigo-100 text-slate-800 hover:border-violet-300 hover:bg-violet-50/30";
           if (isSelected && !isSubmitted) {
             optionStyles = "bg-gradient-to-r from-violet-50 to-indigo-50 border-2 border-violet-500 text-violet-950 ring-1 ring-violet-500/10 font-black shadow-md";
           } else if (isSubmitted && revealCorrectness) {
@@ -254,13 +254,13 @@ export default function QuestionCard({
             } else if (isSelected && !isCorrect) {
               optionStyles = "bg-gradient-to-r from-rose-500/10 via-pink-500/5 to-white/95 border-2 border-rose-500 text-rose-950 shadow-sm font-bold";
             } else {
-              optionStyles = "bg-slate-50/50 border-slate-150 text-slate-500 opacity-60";
+              optionStyles = "bg-slate-50/50 border-slate-100 text-slate-500 opacity-60";
             }
           } else if (isSubmitted && lockFeedback) {
             // Locked exam mode: keep the candidate's own selection visible, neutrally styled.
             optionStyles = isSelected
               ? "bg-gradient-to-r from-violet-50 to-indigo-50 border-2 border-violet-400 text-violet-950 font-black shadow-sm"
-              : "bg-slate-50/50 border-slate-150 text-slate-500 opacity-60";
+              : "bg-slate-50/50 border-slate-100 text-slate-500 opacity-60";
           }
 
           return (
@@ -304,7 +304,7 @@ export default function QuestionCard({
       <div className="flex flex-wrap gap-4 justify-between items-center pt-2" id="q_actions">
         <div>
           {isGenerating && (
-            <span className="text-violet-650 text-xs flex items-center gap-1.5 font-mono font-black animate-pulse">
+            <span className="text-violet-600 text-xs flex items-center gap-1.5 font-mono font-black animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-ping"></span>
               {texts.doublePass}
             </span>
@@ -321,8 +321,8 @@ export default function QuestionCard({
               onClick={() => setShowBasis(prev => !prev)}
               className={`px-5 py-3 rounded-xl font-bold text-sm transition-all duration-200 border flex items-center gap-2 cursor-pointer shadow-sm ${
                 showBasis
-                  ? 'bg-gradient-to-tr from-violet-500/15 to-indigo-500/15 border-violet-305 text-violet-850 hover:bg-violet-100/50'
-                  : 'bg-white border-slate-200 text-slate-705 hover:border-violet-200 hover:bg-violet-55/10'
+                  ? 'bg-gradient-to-tr from-violet-500/15 to-indigo-500/15 border-violet-300 text-violet-800 hover:bg-violet-100/50'
+                  : 'bg-white border-slate-200 text-slate-700 hover:border-violet-200 hover:bg-violet-50/10'
               }`}
             >
               <HelpCircle className="w-4 h-4 text-violet-600" />
@@ -338,7 +338,7 @@ export default function QuestionCard({
               className={`px-7 py-3 rounded-2xl font-black text-sm transition-all duration-200 shadow-md ${
                 selectedOption && !isGenerating
                   ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:opacity-90 active:scale-95 text-white hover:scale-[1.01] cursor-pointer'
-                  : 'bg-slate-100 text-slate-500 cursor-not-allowed border border-slate-205'
+                  : 'bg-slate-100 text-slate-500 cursor-not-allowed border border-slate-200'
               }`}
             >
               {texts.submitBtn}
@@ -389,7 +389,7 @@ export default function QuestionCard({
                 <h4 className="text-[15px] font-black text-indigo-950 flex items-center gap-2 leading-none">
                   {texts.coachTitle}
                 </h4>
-                <p className="text-[10px] text-slate-450 font-mono mt-1 font-bold">
+                <p className="text-[10px] text-slate-400 font-mono mt-1 font-bold">
                   {isSubmitted ? (
                     `${texts.alignment}: ${question.correct_option === selectedOption ? texts.excellent : texts.improvement}`
                   ) : (
@@ -400,7 +400,7 @@ export default function QuestionCard({
             </div>
             <div className="text-right flex flex-col items-end">
               <span className="text-[9px] text-slate-500 font-mono block font-bold uppercase tracking-wider">{texts.auditedStandard}</span>
-              <span className="text-xs text-violet-650 font-bold font-mono">{question.pmbok_8_reference.split('|')[0] || 'PMBOK 8th Edition'}</span>
+              <span className="text-xs text-violet-600 font-bold font-mono">{question.pmbok_8_reference.split('|')[0] || 'PMBOK 8th Edition'}</span>
               {isAdmin && question.grounded_book_name && (
                 <span className="text-[10px] text-emerald-700 font-bold font-mono mt-0.5 flex items-center gap-1">
                   <BookOpen className="w-2.5 h-2.5 text-emerald-500" />
@@ -441,7 +441,7 @@ export default function QuestionCard({
           {/* Fallback Check / Success state banner if submitted */}
           {isSubmitted && (
             question.correct_option === selectedOption ? (
-              <div className="bg-emerald-500/10 border border-emerald-250 text-emerald-950 p-5 rounded-3xl flex items-start gap-3.5 text-sm shadow-sm">
+              <div className="bg-emerald-500/10 border border-emerald-200 text-emerald-950 p-5 rounded-3xl flex items-start gap-3.5 text-sm shadow-sm">
                 <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
                 <div>
                   <p className="font-black text-emerald-950">{successTitle}</p>
@@ -451,7 +451,7 @@ export default function QuestionCard({
                 </div>
               </div>
             ) : (
-              <div className="bg-rose-500/10 border border-rose-250 text-rose-950 p-5 rounded-3xl flex items-start gap-3.5 text-xs sm:text-sm shadow-sm">
+              <div className="bg-rose-500/10 border border-rose-200 text-rose-950 p-5 rounded-3xl flex items-start gap-3.5 text-xs sm:text-sm shadow-sm">
                 <XCircle className="w-5 h-5 shrink-0 text-rose-500 mt-0.5" />
                 <div>
                   <p className="font-black text-rose-950">{failTitle}</p>
@@ -469,7 +469,7 @@ export default function QuestionCard({
               <HelpCircle className="w-3.5 h-3.5 text-indigo-400" /> {texts.coachingTitle}
             </h5>
             <div className="text-indigo-950 text-[14px] leading-relaxed select-text bg-gradient-to-tr from-indigo-50/20 to-violet-50/10 border border-indigo-100/40 p-5 rounded-2xl space-y-4 shadow-xxs">
-              <div className="whitespace-pre-line text-slate-705 font-bold">
+              <div className="whitespace-pre-line text-slate-700 font-bold">
                 {question.explanation}
               </div>
             </div>

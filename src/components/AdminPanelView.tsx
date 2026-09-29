@@ -150,35 +150,35 @@ export default function AdminPanelView({
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
               <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "Candidats inscrits" : "Total Enrolled Candidates"}</span>
               <span className="text-2xl font-black text-indigo-950 block mt-1">{allUsers.length}</span>
-              <span className="text-[10px] text-slate-450 block mt-1 font-bold">{language === 'FR' ? "Comptes candidats synchronisés" : "Synced candidate accounts"}</span>
+              <span className="text-[10px] text-slate-400 block mt-1 font-bold">{language === 'FR' ? "Comptes candidats synchronisés" : "Synced candidate accounts"}</span>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
               <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "En Attente d'Approbation" : "Pending Approval"}</span>
               <span className="text-2xl font-black text-amber-600 block mt-1">{allUsers.filter(u => u.accessStatus === 'pending').length}</span>
-              <span className="text-[10px] text-slate-450 block mt-1 font-bold">{language === 'FR' ? "Nouveaux comptes à valider" : "New accounts awaiting review"}</span>
+              <span className="text-[10px] text-slate-400 block mt-1 font-bold">{language === 'FR' ? "Nouveaux comptes à valider" : "New accounts awaiting review"}</span>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
               <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "Accès Interdits / Suspendus" : "Suspended Accounts"}</span>
               <span className="text-2xl font-black text-rose-600 block mt-1">{allUsers.filter(u => u.accessStatus === 'restricted').length}</span>
-              <span className="text-[10px] text-slate-450 block mt-1 font-bold">{language === 'FR' ? "Candidats restreints" : "Restricted from playground"}</span>
+              <span className="text-[10px] text-slate-400 block mt-1 font-bold">{language === 'FR' ? "Candidats restreints" : "Restricted from playground"}</span>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
               <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "Examens Démarrés" : "Exam Simulation Index"}</span>
               <span className="text-2xl font-black text-amber-500 block mt-1">{allUsers.reduce((sum, u) => sum + (u.testsCount || 0), 0)}</span>
-              <span className="text-[10px] text-slate-450 block mt-1 font-bold">{language === 'FR' ? "Toutes tentatives cumulées" : "All cumulative initiations"}</span>
+              <span className="text-[10px] text-slate-400 block mt-1 font-bold">{language === 'FR' ? "Toutes tentatives cumulées" : "All cumulative initiations"}</span>
             </div>
             <div className="bg-white p-5 rounded-3xl border border-indigo-50 shadow-sm">
               <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">{language === 'FR' ? "Précision de la Classe" : "Cohort Average Score"}</span>
-              <span className="text-2xl font-black text-emerald-650 block mt-1 text-emerald-600">
+              <span className="text-2xl font-black text-emerald-600 block mt-1 text-emerald-600">
                 {allUsers.length > 0 ? Math.round(allUsers.reduce((sum, u) => sum + (u.scorePercentage || 0), 0) / allUsers.length) : 0}%
               </span>
-              <span className="text-[10px] text-slate-450 block mt-1 font-bold">{language === 'FR' ? "Moyenne tous candidats" : "Average accuracy index"}</span>
+              <span className="text-[10px] text-slate-400 block mt-1 font-bold">{language === 'FR' ? "Moyenne tous candidats" : "Average accuracy index"}</span>
             </div>
           </div>
 
           {/* Candidate Supervision Directory Grid */}
           <div className="bg-white p-6 rounded-[2rem] border border-indigo-100 shadow-sm flex flex-col space-y-4">
-            <div className="flex flex-wrap justify-between items-center gap-4 border-b border-indigo-55 pb-4 border-indigo-50">
+            <div className="flex flex-wrap justify-between items-center gap-4 border-b border-indigo-50 pb-4 border-indigo-50">
               <div>
                 <h3 className="text-xs font-black text-indigo-950 uppercase tracking-widest leading-none">
                   {language === 'FR' ? "Registre des Candidats & Supervision de Sécurité" : "Candidate Directory & Access Control"}
@@ -309,9 +309,9 @@ export default function AdminPanelView({
                           </td>
                           <td className="p-4 text-center">
                             <span className={`px-2 py-0.5 rounded-sm text-[10px] font-black ${
-                              userScore >= 75 ? 'bg-emerald-55 text-emerald-700 border border-emerald-250 bg-emerald-50' :
-                              userScore >= 50 ? 'bg-amber-55 text-amber-700 border border-amber-250 bg-amber-50' :
-                              'bg-rose-55 text-rose-700 border border-rose-250 bg-rose-50'
+                              userScore >= 75 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 bg-emerald-50' :
+                              userScore >= 50 ? 'bg-amber-50 text-amber-700 border border-amber-200 bg-amber-50' :
+                              'bg-rose-50 text-rose-700 border border-rose-200 bg-rose-50'
                             }`}>
                               {userScore}%
                             </span>
@@ -347,7 +347,7 @@ export default function AdminPanelView({
                               {/* Reset count */}
                               <button
                                 onClick={() => resetUserTestsCount(u.userId)}
-                                className="px-1.5 py-0.5 bg-slate-50 border border-slate-250 hover:bg-slate-100 text-slate-600 rounded-md text-[10px] font-black cursor-pointer transition-all border-slate-200"
+                                className="px-1.5 py-0.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-md text-[10px] font-black cursor-pointer transition-all border-slate-200"
                                 title={language === 'FR' ? "Réinitialiser les quotas d'essais" : "Reset mock exam quota to zero"}
                               >
                                 {language === 'FR' ? "Réinit. Essais" : "Reset Quota"}
@@ -381,7 +381,7 @@ export default function AdminPanelView({
                                 className={`px-1.5 py-0.5 rounded-md text-[10px] font-extrabold transition-all border shrink-0 cursor-pointer ${
                                   isUserAdmin
                                     ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
-                                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-805 border-indigo-200'
+                                    : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border-indigo-200'
                                 }`}
                               >
                                 {isUserAdmin
@@ -541,7 +541,7 @@ export default function AdminPanelView({
                       <div className="min-w-0 flex-1">
                         <span className="text-xs font-black text-slate-800 block truncate" title={b.name}>{b.name}</span>
                         <div className="flex items-center gap-2.5 mt-1 text-[10px] text-slate-500 font-mono font-bold">
-                          <span className="text-indigo-650 font-black">{b.pageCount} pages</span>
+                          <span className="text-indigo-600 font-black">{b.pageCount} pages</span>
                           <span>•</span>
                           <span>{b.chunkCount} RAG segments</span>
                           <span>•</span>

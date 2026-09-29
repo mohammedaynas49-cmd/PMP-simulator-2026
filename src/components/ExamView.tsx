@@ -135,7 +135,7 @@ export default function ExamView({
             <button
               id="start_exam_btn"
               onClick={handleStartExam}
-              className="flex items-center gap-2 bg-gradient-to-r from-violet-600 via-pink-600 to-amber-500 hover:opacity-90 hover:scale-105 text-white px-6 py-3 rounded-2xl font-black text-sm cursor-pointer shadow-md transition-all active:scale-[0.98]"
+              className="flex items-center gap-2 bg-gradient-to-r from-violet-600 via-pink-600 to-amber-500 hover:opacity-90 hover:scale-100 text-white px-6 py-3 rounded-2xl font-black text-sm cursor-pointer shadow-md transition-all active:scale-[0.98]"
             >
               <Play className="w-4 h-4 text-white fill-white" />
               <span>{texts.beginExam}</span>
@@ -144,7 +144,7 @@ export default function ExamView({
             <button
               id="finish_exam_btn"
               onClick={handleFinishExam}
-              className="bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-850 border-2 border-slate-700/60 text-white px-6 py-2.5 rounded-2xl font-black text-sm cursor-pointer shadow-md transition-all hover:scale-105"
+              className="bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-800 border-2 border-slate-700/60 text-white px-6 py-2.5 rounded-2xl font-black text-sm cursor-pointer shadow-md transition-all hover:scale-100"
             >
               {texts.finishExam}
             </button>
@@ -169,7 +169,7 @@ export default function ExamView({
               <button
                 id="reset_exam_btn"
                 onClick={handleResetExam}
-                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-700 px-5 py-2.5 rounded-xl font-bold text-sm cursor-pointer shadow-xs transition-colors"
+                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-bold text-sm cursor-pointer shadow-xs transition-colors"
               >
                 <RotateCcw className="w-4 h-4 text-slate-600" />
                 <span>{texts.restartSim}</span>
@@ -208,7 +208,7 @@ export default function ExamView({
 
                   let btnStyle = "bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100";
                   if (isActive) {
-                    btnStyle = "bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black ring-2 ring-indigo-500 shadow-sm scale-105";
+                    btnStyle = "bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black ring-2 ring-indigo-500 shadow-sm scale-100";
                   } else if (isAnswered) {
                     btnStyle = "bg-violet-50 border border-violet-200 text-violet-800 font-bold";
                   }
@@ -265,7 +265,7 @@ export default function ExamView({
 
                   let btnStyle = "bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100";
                   if (isActive) {
-                    btnStyle = "bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black ring-2 ring-indigo-500 shadow-sm scale-105";
+                    btnStyle = "bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black ring-2 ring-indigo-500 shadow-sm scale-100";
                   } else if (isAnswered) {
                     btnStyle = "bg-violet-50 border border-violet-200 text-violet-800 font-bold";
                   }
@@ -322,7 +322,7 @@ export default function ExamView({
 
                   let btnStyle = "bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100";
                   if (isActive) {
-                    btnStyle = "bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black ring-2 ring-indigo-500 shadow-sm scale-105";
+                    btnStyle = "bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black ring-2 ring-indigo-500 shadow-sm scale-100";
                   } else if (isAnswered) {
                     btnStyle = "bg-violet-50 border border-violet-200 text-violet-800 font-bold";
                   }
@@ -468,13 +468,13 @@ export default function ExamView({
             <div className="text-4xl sm:text-5xl font-black font-mono bg-gradient-to-r from-violet-600 via-pink-600 to-amber-600 bg-clip-text text-transparent mt-1.5 animate-pulse">
               {examFinalScore}%
             </div>
-            <span className="text-xs text-indigo-905 mt-2 block font-bold">
+            <span className="text-xs text-indigo-900 mt-2 block font-bold">
               {examFinalScore >= 75 ? texts.targetAchieved : texts.improvementReq}
             </span>
           </div>
 
           {/* Domain feedback matrices info box */}
-          <div className="p-5 bg-gradient-to-b from-indigo-50/40 to-violet-50/30 border border-indigo-150 rounded-2xl text-left space-y-3">
+          <div className="p-5 bg-gradient-to-b from-indigo-50/40 to-violet-50/30 border border-indigo-100 rounded-2xl text-left space-y-3">
             <span className="text-xs font-black text-slate-500 uppercase tracking-widest font-mono">{texts.guidelinesTitle}</span>
             <p className="text-xs text-slate-600 leading-relaxed font-bold">
               {texts.guidelinesDesc}
@@ -485,7 +485,7 @@ export default function ExamView({
 
       {/* Waiting workspace state */}
       {!isExamActive && !isExamSubmitted && (
-        <div className="flex-1 bg-white/90 backdrop-blur-md border border-indigo-105 rounded-3xl p-10 flex flex-col items-center justify-center text-center space-y-4 shadow-md z-10">
+        <div className="flex-1 bg-white/90 backdrop-blur-md border border-indigo-100 rounded-3xl p-10 flex flex-col items-center justify-center text-center space-y-4 shadow-md z-10">
           <HelpCircle className="w-12 h-12 text-violet-400 animate-pulse" />
           <div className="space-y-1.5">
             <h3 className="text-sm sm:text-base font-black text-slate-800">{texts.notInitiatedTitle}</h3>

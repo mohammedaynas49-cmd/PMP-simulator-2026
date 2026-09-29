@@ -96,8 +96,8 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
   return (
     <div className="min-h-screen bg-gradient-to-tr from-violet-100 via-rose-100 to-amber-100 flex flex-col items-center justify-center p-4 relative overflow-hidden" id="auth_portal">
       {/* Playful glowing backdrops */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-pink-350/20 blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-amber-250/20 blur-3xl" />
+      <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-pink-300/20 blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-amber-200/20 blur-3xl" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#6366f108_1px,transparent_1px),linear-gradient(to_bottom,#6366f108_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
 
       {/* Auth Card */}
@@ -124,7 +124,7 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
             <div className="bg-indigo-100 p-1 rounded-lg text-indigo-600 shrink-0">
               <ShieldCheck className="w-4 h-4" />
             </div>
-            <span className="text-xs text-slate-705 leading-relaxed">
+            <span className="text-xs text-slate-700 leading-relaxed">
               <strong className="text-indigo-950 font-extrabold">{texts.badge1Title}</strong>{texts.badge1Desc}
             </span>
           </div>
@@ -132,7 +132,7 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
             <div className="bg-pink-100 p-1 rounded-lg text-pink-600 shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
-            <span className="text-xs text-slate-705 leading-relaxed">
+            <span className="text-xs text-slate-700 leading-relaxed">
               <strong className="text-pink-950 font-extrabold">{texts.badge2Title}</strong>{texts.badge2Desc}
             </span>
           </div>
@@ -141,7 +141,7 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
         {/* Buttons and login triggers */}
         <div className="space-y-4 pt-1">
           {error && (
-            <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-750 text-xs rounded-2xl leading-relaxed text-center font-bold">
+            <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-2xl leading-relaxed text-center font-bold">
               {error}
             </div>
           )}
@@ -184,7 +184,7 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
             id="guest_signin_btn"
             disabled={loading}
             onClick={handleCandidateGuestSignIn}
-            className="w-full bg-gradient-to-r from-violet-600 via-pink-600 to-amber-500 hover:from-violet-750 hover:to-amber-600 text-white py-4 px-4 rounded-2xl font-black text-sm transition-all text-center block shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] cursor-pointer"
+            className="w-full bg-gradient-to-r from-violet-600 via-pink-600 to-amber-500 hover:from-violet-700 hover:to-amber-600 text-white py-4 px-4 rounded-2xl font-black text-sm transition-all text-center block shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] cursor-pointer"
           >
             {texts.guestBtn}
           </button>

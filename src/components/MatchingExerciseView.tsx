@@ -131,7 +131,7 @@ export default function MatchingExerciseView({ language }: MatchingExerciseViewP
                       <div
                         key={p.id}
                         className={`flex items-center gap-3 p-3.5 rounded-2xl border ${
-                          isCorrect ? 'bg-emerald-50 border-emerald-200' : isWrong ? 'bg-rose-50 border-rose-200' : 'bg-slate-50/50 border-slate-150'
+                          isCorrect ? 'bg-emerald-50 border-emerald-200' : isWrong ? 'bg-rose-50 border-rose-200' : 'bg-slate-50/50 border-slate-100'
                         }`}
                       >
                         <span className="text-xs font-black text-indigo-950 flex-1">{idx + 1}. {p.term}</span>
@@ -160,7 +160,7 @@ export default function MatchingExerciseView({ language }: MatchingExerciseViewP
                     {language === 'FR' ? "Définitions" : "Definitions"}
                   </span>
                   {shuffledDefinitions.map((d, idx) => (
-                    <div key={d.id} className="flex gap-2.5 p-3.5 rounded-2xl border border-slate-150 bg-slate-50/30">
+                    <div key={d.id} className="flex gap-2.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/30">
                       <span className="text-xs font-black text-indigo-600 shrink-0">{LETTERS[idx]}.</span>
                       <p className="text-xs text-slate-700 leading-relaxed font-bold">{d.definition}</p>
                     </div>

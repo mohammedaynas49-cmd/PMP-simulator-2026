@@ -379,7 +379,7 @@ export default function DomainPracticeView({
                   const activeDomains: PMPDomain[] = prefDomain === 'Any' ? ['People', 'Process', 'Business Environment'] : [prefDomain];
                   handleLaunchDomainPractice(activeDomains, prefSubject, prefPhase, prefMethodology);
                 }}
-                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-700 hover:from-violet-750 hover:to-indigo-850 text-white font-black text-sm rounded-2xl transition-all cursor-pointer shadow-md duration-300 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-700 hover:from-violet-700 hover:to-indigo-800 text-white font-black text-sm rounded-2xl transition-all cursor-pointer shadow-md duration-300 flex items-center justify-center gap-2"
                 id="launch_domain_practice_btn"
               >
                 <span>{language === 'FR' ? "Lancer la Simulation Personnalisée 🚀" : "Start Targeted Training 🚀"}</span>
@@ -400,7 +400,7 @@ export default function DomainPracticeView({
                 <h2 className="text-xs sm:text-sm font-black text-slate-800 leading-none">{texts.compliantSec}</h2>
                 <button
                   onClick={handleClosePractice}
-                  className="text-[10px] font-black font-mono cursor-pointer text-rose-600 hover:text-rose-850 bg-rose-50 hover:bg-rose-100/80 px-3 py-1 rounded-xl transition-all border border-rose-150 shadow-xxs"
+                  className="text-[10px] font-black font-mono cursor-pointer text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100/80 px-3 py-1 rounded-xl transition-all border border-rose-100 shadow-xxs"
                   title={language === 'FR' ? "Quitter et effacer la session d'entraînement" : "Quit and clear targeted simulation session"}
                 >
                   {language === 'FR' ? "❌ Quitter la session" : "❌ Quit Practice"}
@@ -441,7 +441,7 @@ export default function DomainPracticeView({
 
               // Color configuration representing student progress and improvement
               let cardStyle = "bg-gradient-to-br from-slate-50/50 via-white to-slate-100/30 border-slate-200 text-slate-800";
-              let badgeStyle = "bg-slate-150 text-slate-600 border-slate-200 font-bold";
+              let badgeStyle = "bg-slate-100 text-slate-600 border-slate-200 font-bold";
               let progressColor = "bg-slate-300";
               let levelText = language === 'FR' ? "Non initié" : "Not Started";
 
@@ -596,7 +596,7 @@ export default function DomainPracticeView({
                 <button
                   id="launch_staged_domain_practice_btn"
                   onClick={() => handleLaunchDomainPractice()}
-                  className="px-8 py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-700 hover:from-violet-750 hover:to-indigo-850 text-white font-black text-sm rounded-2xl transition-all cursor-pointer shadow-md duration-300 flex items-center justify-center gap-2"
+                  className="px-8 py-4 bg-gradient-to-r from-violet-600 via-indigo-600 to-indigo-700 hover:from-violet-700 hover:to-indigo-800 text-white font-black text-sm rounded-2xl transition-all cursor-pointer shadow-md duration-300 flex items-center justify-center gap-2"
                 >
                   <Play className="w-4 h-4" />
                   <span>{language === 'FR' ? "Lancer l'entraînement" : "Launch Training"}</span>
