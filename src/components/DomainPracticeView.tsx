@@ -25,8 +25,8 @@ interface DomainPracticeViewProps {
   selectedDomains: PMPDomain[];
   handleClosePractice: () => void;
 
-  prefQuestionType: 'situational' | 'definition';
-  setPrefQuestionType: (v: 'situational' | 'definition') => void;
+  prefQuestionType: 'situational' | 'definition' | 'case_study';
+  setPrefQuestionType: (v: 'situational' | 'definition' | 'case_study') => void;
   prefGenerationSource: 'docs' | 'ai' | 'combine';
   setPrefGenerationSource: (v: 'docs' | 'ai' | 'combine') => void;
   prefDomain: 'People' | 'Process' | 'Business Environment' | 'Any';
@@ -157,6 +157,17 @@ export default function DomainPracticeView({
                     }`}
                   >
                     📖 {language === 'FR' ? "Définitions PMBOK (Glossaire)" : "PMBOK Glossary Definitions"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrefQuestionType('case_study')}
+                    className={`flex-1 py-4 px-5 rounded-2xl text-xs sm:text-sm font-black border transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                      prefQuestionType === 'case_study'
+                        ? 'bg-amber-50 border-amber-300 text-amber-950 shadow-xxs'
+                        : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    📚 {language === 'FR' ? "Études de Cas (Case Studies)" : "Case Studies"}
                   </button>
                 </div>
               </div>

@@ -17,7 +17,7 @@ export interface PMPQuestion {
    * extractQuestionsFromBook), pointing back at that book's id - distinct from
    * `grounded_book_name`-only questions, which are newly AI-drafted, not extracted. */
   source_book_id?: string;
-  question_focus_type?: 'situational' | 'definition';
+  question_focus_type?: 'situational' | 'definition' | 'case_study';
   case_study_id?: string;
   case_study_title?: string;
   case_study_scenario?: string;

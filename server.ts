@@ -791,6 +791,159 @@ async function startServer() {
     console.log(`[Extraction] Found ${extractedCount} extractable question(s) in "${bookName}" (scanned ${chunksToScan.length}/${chunks.length} chunks).`);
   }
 
+  // A dedicated "case studies" document (filename contains "case study"/"case_study", same
+  // filename-classification pattern used for "situational"/glossary/PMBOK elsewhere in this file)
+  // is structured differently from a plain question bank: ONE shared narrative/scenario followed
+  // by several (typically 3-5) related questions that all refer back to it - not standalone
+  // questions each with their own scenario. extractQuestionsFromBook's per-chunk-batch extraction
+  // would risk splitting a case study's narrative from its later questions across batch
+  // boundaries, so this scans the whole (bounded) document in a single Gemini call instead -
+  // case study documents are short enough that this comfortably fits in context.
+  const isCaseStudyBookName = (name: string): boolean => {
+    // Normalized so "Case Study", "case_study", "case-study", "CaseStudies.pdf" etc. all match
+    // regardless of which separator (or none) the admin used in the filename.
+    const normalized = (name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    return normalized.includes("casestud");
+  };
+
+  async function extractCaseStudiesFromBook(bookId: string, bookName: string, chunks: string[]) {
+    const bookRef = doc(db, "books", bookId);
+    const client = getGeminiClient();
+    if (!client) {
+      console.warn(`[Case Study Extraction] Gemini offline - skipping extraction for "${bookName}".`);
+      await bookRef.update({ extractionStatus: "skipped_offline", extractedQuestionsCount: 0 }).catch(() => {});
+      return;
+    }
+
+    const chunksToScan = chunks.slice(0, MAX_EXTRACTION_CHUNKS);
+    const fullText = chunksToScan.join("\n\n---\n\n");
+    let extractedCount = 0;
+
+    try {
+      const extractionPrompt = `
+      You are scanning a candidate's uploaded PMP "case study" document. A case study consists of
+      ONE shared narrative/scenario describing a project situation, followed by SEVERAL (typically
+      3-5) separate multiple-choice questions that all refer back to that same shared scenario -
+      NOT standalone questions each with their own independent scenario.
+
+      Find every complete case study in the text below: its shared scenario/narrative, plus its
+      related questions, each with exactly 4 answer options and either an explicitly stated
+      correct answer or an answer key/explanation elsewhere in the excerpt that lets you determine
+      it with certainty. Preserve the original wording and language of both the narrative and each
+      question; do not invent, rephrase, embellish, or add details that are not present.
+
+      If a case study is incomplete (its narrative is not present in this excerpt, fewer than 2
+      of its questions are usable, or you cannot determine a correct answer for a question), leave
+      it out rather than guessing. If the excerpt contains no complete case study at all, return
+      an empty "case_studies" array.
+
+      [DOCUMENT EXCERPT]
+      ${fullText}
+      [END DOCUMENT EXCERPT]
+      `;
+
+      const response = await generateContentWithRetry(client, {
+        model: "gemini-3.5-flash",
+        contents: extractionPrompt,
+        config: {
+          temperature: 0.1,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              case_studies: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    scenario_title: { type: Type.STRING },
+                    scenario_text: { type: Type.STRING },
+                    questions: {
+                      type: Type.ARRAY,
+                      items: {
+                        type: Type.OBJECT,
+                        properties: {
+                          eco_domain: { type: Type.STRING, enum: ["People", "Process", "Business Environment"] },
+                          scenario: { type: Type.STRING },
+                          options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                          correct_option: { type: Type.STRING, enum: ["A", "B", "C", "D"] },
+                          explanation: { type: Type.STRING },
+                          methodology: { type: Type.STRING, enum: ["Agile/Hybrid", "Predictive"] },
+                          tags: { type: Type.ARRAY, items: { type: Type.STRING } }
+                        },
+                        required: ["eco_domain", "scenario", "options", "correct_option", "explanation", "methodology", "tags"]
+                      }
+                    }
+                  },
+                  required: ["scenario_title", "scenario_text", "questions"]
+                }
+              }
+            },
+            required: ["case_studies"]
+          }
+        }
+      }, 2);
+
+      const rawText = response.text;
+      if (rawText) {
+        const parsed = JSON.parse(rawText);
+        const foundCaseStudies = Array.isArray(parsed.case_studies) ? parsed.case_studies : [];
+
+        for (let csIndex = 0; csIndex < foundCaseStudies.length; csIndex++) {
+          const cs = foundCaseStudies[csIndex];
+          if (!cs || typeof cs.scenario_text !== "string" || !Array.isArray(cs.questions) || cs.questions.length < 2) {
+            continue; // skip anything that doesn't cleanly match a real case study rather than guessing
+          }
+          const caseStudyId = `casestudy_${bookId}_${csIndex}`;
+          let qIndex = 0;
+          for (const q of cs.questions) {
+            if (
+              !q || typeof q.scenario !== "string" || !Array.isArray(q.options) || q.options.length !== 4 ||
+              !["A", "B", "C", "D"].includes(q.correct_option)
+            ) {
+              continue;
+            }
+            // Zero-padded question index in the id so lexicographic sorting (used when serving,
+            // see /api/questions/generate below) matches the case study's original question order.
+            const questionId = `extracted_casestudy_${bookId}_${csIndex}_${String(qIndex).padStart(2, "0")}`;
+            await setDoc(doc(db, "questions", questionId), {
+              question_id: questionId,
+              eco_domain: q.eco_domain,
+              scenario: q.scenario,
+              options: q.options,
+              correct_option: q.correct_option,
+              explanation: q.explanation || "Extracted from uploaded case study material.",
+              pmbok_8_reference: `Extracted from: ${bookName}`,
+              methodology: q.methodology === "Predictive" ? "Predictive" : "Agile/Hybrid",
+              tags: Array.isArray(q.tags) ? q.tags.slice(0, 10) : [],
+              source_book_id: bookId,
+              grounded_book_name: bookName,
+              case_study_id: caseStudyId,
+              case_study_title: cs.scenario_title || "Case Study",
+              case_study_scenario: cs.scenario_text,
+              series_type: "case_study",
+              series_label: `Q${qIndex + 1}/${cs.questions.length}`,
+              question_focus_type: "case_study"
+            });
+            extractedCount++;
+            qIndex++;
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`[Case Study Extraction] Failed for "${bookName}":`, err);
+      // Best-effort: fall through to the final status update below rather than leaving the book
+      // doc stuck on "pending" forever.
+    }
+
+    await bookRef.update({
+      extractionStatus: "done",
+      extractedQuestionsCount: extractedCount
+    }).catch(err => console.error("[Case Study Extraction] Failed to update book doc with final count:", err));
+
+    console.log(`[Case Study Extraction] Found ${extractedCount} question(s) across case studies in "${bookName}" (scanned ${chunksToScan.length}/${chunks.length} chunks).`);
+  }
+
   // Upload a PMP book (accepts PDF and TXT up to 150MB)
   app.post("/api/books/upload", requireAdmin, generationLimiter, upload.single("file"), async (req, res) => {
     try {
@@ -864,10 +1017,20 @@ async function startServer() {
       console.log(`Success Cloud Persist: Loaded book "${req.file.originalname}" with ${pageCount} pages, parsed and saved into Firestore.`);
 
       // Fire-and-forget: scan for pre-existing extractable questions in the background so the
-      // upload response below doesn't wait on it, no matter how large the document is.
-      extractQuestionsFromBook(bookId, req.file.originalname, chunks).catch(err =>
-        console.error(`[Extraction] Unhandled failure for book "${req.file?.originalname}":`, err)
-      );
+      // upload response below doesn't wait on it, no matter how large the document is. A
+      // dedicated case studies document goes through the case-study-aware extractor instead of
+      // the flat one, since its shared-narrative structure needs different handling (see
+      // extractCaseStudiesFromBook above) - never both, to avoid the flat extractor mangling a
+      // case study's questions into standalone ones missing their shared scenario.
+      if (isCaseStudyBookName(req.file.originalname)) {
+        extractCaseStudiesFromBook(bookId, req.file.originalname, chunks).catch(err =>
+          console.error(`[Case Study Extraction] Unhandled failure for book "${req.file?.originalname}":`, err)
+        );
+      } else {
+        extractQuestionsFromBook(bookId, req.file.originalname, chunks).catch(err =>
+          console.error(`[Extraction] Unhandled failure for book "${req.file?.originalname}":`, err)
+        );
+      }
 
       // Same fire-and-forget treatment for glossary term extraction, so it's ready (cached in
       // Firestore) before the first Definitions Search / Matching Exercise request needs it -
@@ -2083,7 +2246,10 @@ async function startServer() {
     // that pool is exhausted (or no such book exists), or whenever the admin's chosen source is
     // "ai"/"combine" - candidates are always forced to "docs" (see DomainPracticeView.tsx), so this
     // is effectively their default situational-question source, with AI as the admin-gated option.
-    if (questionType !== "definition" && activeGenSource === "docs") {
+    // Scoped strictly to "situational" (not just "not definition") now that "case_study" is a
+    // third, separately-handled focus type below - otherwise a case-study request would
+    // incorrectly get routed into the situational-book lookup.
+    if (questionType === "situational" && activeGenSource === "docs") {
       try {
         const booksSnap = await withFirestoreTimeout(
           collection(db, "books").get(),
@@ -2114,6 +2280,60 @@ async function startServer() {
         }
       } catch (situationalErr) {
         console.error("Error serving extracted situational question (falling back to generation):", situationalErr);
+      }
+    }
+
+    // "Case Studies" focus in "docs solely" mode: same idea as the situational block above, but
+    // served from a dedicated case-studies book (filename contains "case study"/"case_study",
+    // see isCaseStudyBookName) whose questions were extracted grouped by shared scenario (see
+    // extractCaseStudiesFromBook). Picking prefers CONTINUING a case study the candidate has
+    // already started (so all of one scenario's questions are answered consecutively, in their
+    // original order) over starting a fresh one - QuestionCard already renders case_study_title/
+    // case_study_scenario/series_label whenever present, so no separate UI is needed here.
+    if (questionType === "case_study" && activeGenSource === "docs") {
+      try {
+        const booksSnap = await withFirestoreTimeout(
+          collection(db, "books").get(),
+          "list books for case study extraction"
+        );
+        const caseStudyBook = booksSnap.docs.find(d => isCaseStudyBookName(d.data().name || ""));
+        if (caseStudyBook) {
+          const extractedSnap = await withFirestoreTimeout(
+            collection(db, "questions").where("source_book_id", "==", caseStudyBook.id).get(),
+            "list extracted case study questions"
+          );
+          const excludeSet = new Set(Array.isArray(excludeIds) ? excludeIds : []);
+          const all = extractedSnap.docs.map(d => d.data());
+          const unused = all.filter(q => !excludeSet.has(q.question_id));
+          if (unused.length > 0) {
+            const groups = new Map<string, any[]>();
+            for (const q of unused) {
+              const key = q.case_study_id || q.question_id;
+              if (!groups.has(key)) groups.set(key, []);
+              groups.get(key)!.push(q);
+            }
+            const startedCaseStudyIds = new Set(
+              all.filter(q => excludeSet.has(q.question_id) && q.case_study_id).map(q => q.case_study_id)
+            );
+            const groupKeys = Array.from(groups.keys());
+            const continuingKeys = groupKeys.filter(k => startedCaseStudyIds.has(k));
+            const candidateKeys = continuingKeys.length > 0 ? continuingKeys : groupKeys;
+            const chosenKey = candidateKeys[Math.floor(Math.random() * candidateKeys.length)];
+            const groupQuestions = groups.get(chosenKey)!.sort((a, b) => (a.question_id || "").localeCompare(b.question_id || ""));
+            const picked = groupQuestions[0];
+            console.log(`[Case Study Extraction] Serving a real question from "${caseStudyBook.data().name}" (${unused.length} unused left, continuing=${continuingKeys.length > 0}).`);
+            return res.json({
+              question: { ...picked, question_focus_type: "case_study" },
+              fallback: false,
+              message: isFrench
+                ? "Question extraite de votre document d'études de cas."
+                : "Question extracted from your dedicated case studies document."
+            });
+          }
+          console.log(`[Case Study Extraction] "${caseStudyBook.data().name}" found but its extracted pool is exhausted - falling back to docs-grounded generation.`);
+        }
+      } catch (caseStudyErr) {
+        console.error("Error serving extracted case study question (falling back to generation):", caseStudyErr);
       }
     }
 

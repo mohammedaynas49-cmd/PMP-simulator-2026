@@ -83,7 +83,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
   const [prefSubject, setPrefSubject] = useState<string>('Any');
   const [prefPhase, setPrefPhase] = useState<'Initiating' | 'Planning' | 'Executing' | 'Monitoring and Controlling' | 'Closing' | 'Any'>('Any');
   const [prefMethodology, setPrefMethodology] = useState<'Predictive' | 'Adaptive/Agile' | 'Hybrid' | 'Any'>('Any');
-  const [prefQuestionType, setPrefQuestionType] = useState<'situational' | 'definition'>('situational');
+  const [prefQuestionType, setPrefQuestionType] = useState<'situational' | 'definition' | 'case_study'>('situational');
   const [prefGenerationSource, setPrefGenerationSource] = useState<'docs' | 'ai' | 'combine'>('combine');
   const [sessionCompletedCount, setSessionCompletedCount] = useState<number>(0);
 
