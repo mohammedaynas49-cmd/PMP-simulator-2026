@@ -2140,7 +2140,7 @@ async function startServer() {
 
   // Dynamic Two-Pass question generator endpoint
   app.post("/api/questions/generate", requireAuth, generationLimiter, async (req, res) => {
-    const { domain, methodology, contextTag, language, subject, phase, sessionCompletedCount, excludeIds, questionType, generationSource } = req.body;
+    const { domain, methodology, contextTag, language, subject, phase, sessionCompletedCount, excludeIds, questionType, generationSource, freshDomainSession } = req.body;
     const isFrench = language === "FR";
     const selectedDefaults = isFrench ? DEFAULT_QUESTIONS_FR : DEFAULT_QUESTIONS;
     
@@ -2287,9 +2287,17 @@ async function startServer() {
     // served from a dedicated case-studies book (filename contains "case study"/"case_study",
     // see isCaseStudyBookName) whose questions were extracted grouped by shared scenario (see
     // extractCaseStudiesFromBook). Picking prefers CONTINUING a case study the candidate has
-    // already started (so all of one scenario's questions are answered consecutively, in their
-    // original order) over starting a fresh one - QuestionCard already renders case_study_title/
-    // case_study_scenario/series_label whenever present, so no separate UI is needed here.
+    // already started THIS SESSION (so all of one scenario's questions are answered
+    // consecutively, in their original order) over starting a fresh one - QuestionCard already
+    // renders case_study_title/case_study_scenario/series_label whenever present, so no separate
+    // UI is needed here. `excludeIds` accumulates across a candidate's ENTIRE account, not just
+    // the current session (a candidate should never repeat a question), so without
+    // `freshDomainSession` this "continue" preference would force-resume any case study left
+    // incomplete by a PAST session (hitting the target question count, quitting early, etc.)
+    // forever after, making it impossible to ever start a genuinely new one on demand - the
+    // client sets `freshDomainSession: true` only on the very first fetch of a newly-launched
+    // session (see fetchNewQuestion in Dashboard.tsx), so that one call picks unbiased among all
+    // available case studies instead.
     if (questionType === "case_study" && activeGenSource === "docs") {
       try {
         const booksSnap = await withFirestoreTimeout(
@@ -2316,7 +2324,7 @@ async function startServer() {
               all.filter(q => excludeSet.has(q.question_id) && q.case_study_id).map(q => q.case_study_id)
             );
             const groupKeys = Array.from(groups.keys());
-            const continuingKeys = groupKeys.filter(k => startedCaseStudyIds.has(k));
+            const continuingKeys = freshDomainSession ? [] : groupKeys.filter(k => startedCaseStudyIds.has(k));
             const candidateKeys = continuingKeys.length > 0 ? continuingKeys : groupKeys;
             const chosenKey = candidateKeys[Math.floor(Math.random() * candidateKeys.length)];
             const groupQuestions = groups.get(chosenKey)!.sort((a, b) => (a.question_id || "").localeCompare(b.question_id || ""));

@@ -634,7 +634,12 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
            // DomainPracticeView.tsx, which hides the source picker for them) - enforced here too
            // so the restriction holds regardless of client state.
            generationSource: isAdmin ? prefGenerationSource : 'docs',
-           questionType: prefQuestionType
+           questionType: prefQuestionType,
+           // True only on the very first fetch of a newly-launched session (same signal already
+           // used for currentSessionCount above) - lets a "Case Studies" session start fresh
+           // instead of being forced to resume a case study left incomplete by a past session
+           // (see the server-side comment in /api/questions/generate for why this matters).
+           freshDomainSession: !!overrideDomains
          })
        });
 
