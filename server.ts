@@ -410,19 +410,58 @@ async function startServer() {
   // which is treated as "unknown" rather than an error so local dev never breaks this. HTTP-only
   // on the free tier, but this is a server-to-server call (this Node process calling out to
   // ip-api.com), never the browser, so there's no mixed-content concern.
-  async function resolveIpLocation(ip: string): Promise<{ country: string | null; city: string | null; region: string | null }> {
-    try {
-      const cleanIp = (ip || "").replace(/^::ffff:/, ""); // IPv4-mapped IPv6 form Express sometimes reports
-      const resp = await fetch(`http://ip-api.com/json/${encodeURIComponent(cleanIp)}?fields=status,country,regionName,city`);
-      const data = await resp.json();
-      if (data.status !== "success") {
-        return { country: null, city: null, region: null };
-      }
-      return { country: data.country || null, city: data.city || null, region: data.regionName || null };
-    } catch (err) {
-      console.warn("IP geolocation lookup failed:", err);
-      return { country: null, city: null, region: null };
+  type IpLocation = { country: string | null; countryCode: string | null; city: string | null; region: string | null };
+  const EMPTY_LOCATION: IpLocation = { country: null, countryCode: null, city: null, region: null };
+
+  async function resolveIpLocation(ip: string): Promise<IpLocation> {
+    const cleanIp = (ip || "").replace(/^::ffff:/, ""); // IPv4-mapped IPv6 form Express sometimes reports
+    if (!cleanIp) {
+      console.warn("[Geolocation] No IP to resolve.");
+      return EMPTY_LOCATION;
     }
+
+    // Primary: ip-api.com (HTTP-only on the free tier, but this is a server-to-server call, so
+    // that's not a browser mixed-content issue). Falls back to a second free provider if this
+    // one fails or is unreachable, rather than silently giving up on the first miss - logs enough
+    // detail on every failure path to diagnose from the server logs, not just a silent null.
+    try {
+      const resp = await fetch(`http://ip-api.com/json/${encodeURIComponent(cleanIp)}?fields=status,message,country,countryCode,regionName,city`, {
+        signal: AbortSignal.timeout(5000)
+      });
+      const data = await resp.json();
+      if (data.status === "success") {
+        return {
+          country: data.country || null,
+          countryCode: data.countryCode || null,
+          city: data.city || null,
+          region: data.regionName || null
+        };
+      }
+      console.warn(`[Geolocation] ip-api.com returned non-success for ${cleanIp}: ${data.message || data.status}`);
+    } catch (err) {
+      console.warn(`[Geolocation] ip-api.com request failed for ${cleanIp}:`, err);
+    }
+
+    // Fallback: ipapi.co (HTTPS, no key, ~1000 req/day free tier).
+    try {
+      const resp = await fetch(`https://ipapi.co/${encodeURIComponent(cleanIp)}/json/`, {
+        signal: AbortSignal.timeout(5000)
+      });
+      const data = await resp.json();
+      if (!data.error) {
+        return {
+          country: data.country_name || null,
+          countryCode: data.country_code || null,
+          city: data.city || null,
+          region: data.region || null
+        };
+      }
+      console.warn(`[Geolocation] ipapi.co fallback returned an error for ${cleanIp}: ${data.reason || data.error}`);
+    } catch (err) {
+      console.warn(`[Geolocation] ipapi.co fallback request failed for ${cleanIp}:`, err);
+    }
+
+    return EMPTY_LOCATION;
   }
 
   // Logs one chronological login-history entry for the calling user, with a best-effort
@@ -439,6 +478,14 @@ async function startServer() {
         ip,
         ...location
       });
+      // Denormalized onto the session doc itself (not just the loginHistory subcollection) so the
+      // Candidate Directory table can show a flag per row without a per-candidate history fetch.
+      if (location.country || location.countryCode) {
+        await doc(db, "sessions", uid).update({
+          lastLoginCountry: location.country,
+          lastLoginCountryCode: location.countryCode
+        }).catch(() => {});
+      }
       res.json({ success: true });
     } catch (err: any) {
       console.error("Error in /api/session/log-login:", err);

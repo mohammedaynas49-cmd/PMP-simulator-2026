@@ -59,4 +59,10 @@ export interface UserSession {
   testsCount?: number; // count of exams/tests taken
   createdAt?: string; // ISO timestamp, set once at first sign-in
   lastLoginAt?: string; // ISO timestamp, updated on every sign-in
+  /** Best-effort country resolved from the most recent sign-in's IP (see POST
+   * /api/session/log-login) - denormalized here (in addition to the full per-visit
+   * sessions/{uid}/loginHistory subcollection) so the Candidate Directory table can show a flag
+   * per row without a separate fetch. */
+  lastLoginCountry?: string | null;
+  lastLoginCountryCode?: string | null;
 }

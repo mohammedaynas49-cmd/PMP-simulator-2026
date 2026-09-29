@@ -15,7 +15,6 @@ import {
   Clock,
   UploadCloud,
   Trash2,
-  Eye,
   X,
   MapPin,
   TrendingDown,
@@ -42,7 +41,7 @@ interface AdminPanelViewProps {
   deleteCandidate: (targetUserId: string, targetEmail?: string) => void;
   currentUserUid?: string;
   detailCandidateUid: string | null;
-  candidateHistory: { timestamp: string; country: string | null; city: string | null; region: string | null }[];
+  candidateHistory: { timestamp: string; country: string | null; countryCode: string | null; city: string | null; region: string | null }[];
   isLoadingHistory: boolean;
   openCandidateDetail: (targetUserId: string) => void;
   closeCandidateDetail: () => void;
@@ -126,6 +125,27 @@ export default function AdminPanelView({
     } catch {
       return iso;
     }
+  };
+
+  // Renders an actual flag image (flagcdn.com, free, no key) rather than a Unicode flag emoji -
+  // Windows/Chrome in particular has no built-in color-flag emoji font, so a regional-indicator
+  // emoji sequence silently falls back to rendering as plain "MA"-style text there instead of a
+  // flag, confirmed while testing this feature. Hides itself entirely on a bad/missing code or a
+  // failed image load rather than showing a broken-image icon.
+  const FlagIcon = ({ countryCode, title }: { countryCode: string | null | undefined; title?: string | null }) => {
+    if (!countryCode || countryCode.length !== 2) return null;
+    return (
+      <img
+        src={`https://flagcdn.com/24x18/${countryCode.toLowerCase()}.png`}
+        srcSet={`https://flagcdn.com/48x36/${countryCode.toLowerCase()}.png 2x`}
+        width={24}
+        height={18}
+        alt={title || countryCode}
+        title={title || undefined}
+        className="inline-block rounded-[2px] shrink-0 border border-slate-200/60"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+    );
   };
 
   return (
@@ -317,9 +337,14 @@ export default function AdminPanelView({
                           <td className="p-4 text-left">
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-slate-900 text-[11px] leading-tight block truncate max-w-[150px] font-black" title={u.email}>
+                                <FlagIcon countryCode={u.lastLoginCountryCode} title={u.lastLoginCountry} />
+                                <button
+                                  onClick={() => openCandidateDetail(u.userId)}
+                                  className="text-indigo-700 hover:text-indigo-900 hover:underline text-[11px] leading-tight truncate max-w-[150px] font-black text-left cursor-pointer"
+                                  title={language === 'FR' ? `Voir le détail de ${u.email}` : `View detail for ${u.email}`}
+                                >
                                   {u.email}
-                                </span>
+                                </button>
                                 {isUserAdmin && (
                                   <span className="px-1.5 py-0.2 text-[8px] rounded-sm font-black font-mono bg-amber-50 border border-amber-200 text-amber-600 block shadow-inner">
                                     ADMIN
@@ -387,15 +412,6 @@ export default function AdminPanelView({
                           </td>
                           <td className="p-4 text-right">
                             <div className="flex gap-1.5 justify-end">
-                              {/* Details: chronological login history + location, domain scores,
-                                  and weakest concepts for this candidate. */}
-                              <button
-                                onClick={() => openCandidateDetail(u.userId)}
-                                className="px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded-md text-[10px] font-black cursor-pointer transition-all flex items-center gap-1"
-                                title={language === 'FR' ? "Voir le détail du candidat" : "View candidate detail"}
-                              >
-                                <Eye className="w-2.5 h-2.5" />
-                              </button>
                               {/* Reset count */}
                               <button
                                 onClick={() => resetUserTestsCount(u.userId)}
@@ -782,10 +798,21 @@ export default function AdminPanelView({
                             {formatHistoryTimestamp(entry.timestamp)}
                           </td>
                           <td className="px-3 py-2 text-[10px] font-bold text-slate-600 flex items-center gap-1.5">
-                            <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
-                            {entry.city || entry.country
-                              ? [entry.city, entry.region, entry.country].filter(Boolean).join(', ')
-                              : (language === 'FR' ? "Localisation inconnue" : "Unknown location")}
+                            {entry.city || entry.country ? (
+                              <>
+                                {entry.countryCode ? (
+                                  <FlagIcon countryCode={entry.countryCode} title={entry.country} />
+                                ) : (
+                                  <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                                )}
+                                {[entry.city, entry.region, entry.country].filter(Boolean).join(', ')}
+                              </>
+                            ) : (
+                              <>
+                                <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                                {language === 'FR' ? "Localisation inconnue" : "Unknown location"}
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))}

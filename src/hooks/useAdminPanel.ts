@@ -44,7 +44,7 @@ export function useAdminPanel({
   // with the full UserSession doc in allUsers/filteredUsers, so only the login-history
   // subcollection (a separate Firestore path) needs its own fetch.
   const [detailCandidateUid, setDetailCandidateUid] = useState<string | null>(null);
-  const [candidateHistory, setCandidateHistory] = useState<{ timestamp: string; country: string | null; city: string | null; region: string | null }[]>([]);
+  const [candidateHistory, setCandidateHistory] = useState<{ timestamp: string; country: string | null; countryCode: string | null; city: string | null; region: string | null }[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
 
   const openCandidateDetail = async (targetUserId: string) => {
