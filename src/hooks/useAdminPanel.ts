@@ -70,6 +70,34 @@ export function useAdminPanel({
     setCandidateHistory([]);
   };
 
+  // Re-resolves location for historical login-history entries that have a stored IP but never
+  // got a country (see POST /api/admin/backfill-locations) - fixes flags missing for logins that
+  // predate the countryCode field or hit a since-improved geolocation failure, without needing
+  // the candidate to log in again. Refreshes the candidate list afterward so any newly-resolved
+  // flags show up immediately.
+  const [isBackfillingLocations, setIsBackfillingLocations] = useState<boolean>(false);
+  const backfillLocations = async () => {
+    setIsBackfillingLocations(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const response = await fetch('/api/admin/backfill-locations', {
+        method: 'POST',
+        headers: idToken ? { Authorization: `Bearer ${idToken}` } : {}
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Request failed with status ${response.status}`);
+      await fetchAllUsersForAdmin();
+      alert(language === 'FR'
+        ? `Localisations mises à jour : ${data.updatedEntries} entrée(s) sur ${data.updatedSessions} candidat(s).`
+        : `Locations updated: ${data.updatedEntries} entrie(s) across ${data.updatedSessions} candidate(s).`);
+    } catch (err) {
+      console.error("Action backfillLocations failed:", err);
+      alert(language === 'FR' ? "Échec de la mise à jour des localisations." : "Failed to backfill locations.");
+    } finally {
+      setIsBackfillingLocations(false);
+    }
+  };
+
   // Filter registered users dynamically based on admin email search query
   const filteredUsers = allUsers.filter((u) => {
     if (!adminUserSearch.trim()) return true;
@@ -239,6 +267,8 @@ export function useAdminPanel({
     candidateHistory,
     isLoadingHistory,
     openCandidateDetail,
-    closeCandidateDetail
+    closeCandidateDetail,
+    isBackfillingLocations,
+    backfillLocations
   };
 }

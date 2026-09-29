@@ -239,7 +239,9 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     candidateHistory,
     isLoadingHistory,
     openCandidateDetail,
-    closeCandidateDetail
+    closeCandidateDetail,
+    isBackfillingLocations,
+    backfillLocations
   } = useAdminPanel({
     user,
     language,
@@ -1347,6 +1349,8 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
             isLoadingHistory={isLoadingHistory}
             openCandidateDetail={openCandidateDetail}
             closeCandidateDetail={closeCandidateDetail}
+            isBackfillingLocations={isBackfillingLocations}
+            backfillLocations={backfillLocations}
             books={books}
             dragActive={dragActive}
             bookUploading={bookUploading}

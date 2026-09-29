@@ -593,6 +593,76 @@ async function startServer() {
     }
   });
 
+  // Re-attempts geolocation for every login-history entry across every candidate that has a
+  // stored `ip` but no `countryCode` yet - covers both entries written before the countryCode
+  // field existed at all, and entries where the single-provider resolver of the time simply
+  // failed (now more likely to succeed with the current dual-provider fallback, see
+  // resolveIpLocation above). Admin-triggered only (not automatic) since it makes real outbound
+  // calls to the geolocation providers; dedupes by IP within one run so a candidate with many
+  // historical entries from the same IP only costs one real lookup. After fixing entries, also
+  // refreshes each session doc's denormalized lastLoginCountry/lastLoginCountryCode from
+  // whichever entry is now that candidate's most recent one - self-healing any past drift
+  // between the subcollection and the denormalized fields, not just filling gaps.
+  app.post("/api/admin/backfill-locations", requireAdmin, async (req, res) => {
+    try {
+      const sessionsSnap = await withFirestoreTimeout(collection(db, "sessions").get(), "list sessions for backfill");
+      const ipCache = new Map<string, IpLocation>();
+      let updatedEntries = 0;
+      let updatedSessions = 0;
+
+      for (const sessionDoc of sessionsSnap.docs) {
+        const uid = sessionDoc.id;
+        const historySnap = await collection(db, "sessions", uid, "loginHistory").get();
+        if (historySnap.empty) continue;
+
+        const entries = historySnap.docs.map(d => {
+          const data = d.data();
+          return {
+            ref: d.ref,
+            timestamp: (data.timestamp as string) || "",
+            ip: data.ip as string | undefined,
+            countryCode: (data.countryCode as string | null | undefined) || null,
+            country: (data.country as string | null | undefined) || null
+          };
+        });
+
+        for (const entry of entries) {
+          if (entry.ip && !entry.countryCode) {
+            let location = ipCache.get(entry.ip);
+            if (!location) {
+              location = await resolveIpLocation(entry.ip);
+              ipCache.set(entry.ip, location);
+            }
+            if (location.countryCode) {
+              await entry.ref.update({
+                country: location.country, countryCode: location.countryCode,
+                city: location.city, region: location.region
+              });
+              entry.countryCode = location.countryCode;
+              entry.country = location.country;
+              updatedEntries++;
+            }
+          }
+        }
+
+        entries.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+        const mostRecent = entries[0];
+        if (mostRecent?.countryCode) {
+          await doc(db, "sessions", uid).update({
+            lastLoginCountry: mostRecent.country,
+            lastLoginCountryCode: mostRecent.countryCode
+          }).catch(() => {});
+          updatedSessions++;
+        }
+      }
+
+      res.json({ success: true, updatedEntries, updatedSessions });
+    } catch (err: any) {
+      console.error("Error in POST /api/admin/backfill-locations:", err);
+      res.status(500).json({ error: err.message || "Failed to backfill locations." });
+    }
+  });
+
   // --- PMP STUDY BOOKS API ENDPOINTS ---
 
   // Scans an uploaded document's chunks for EXISTING, ready-to-use multiple-choice questions

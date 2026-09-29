@@ -18,7 +18,8 @@ import {
   X,
   MapPin,
   TrendingDown,
-  History
+  History,
+  Globe
 } from 'lucide-react';
 
 interface AdminPanelViewProps {
@@ -45,6 +46,8 @@ interface AdminPanelViewProps {
   isLoadingHistory: boolean;
   openCandidateDetail: (targetUserId: string) => void;
   closeCandidateDetail: () => void;
+  isBackfillingLocations: boolean;
+  backfillLocations: () => void;
 
   // Exam Books & AI Study (knowledge) tab
   books: BookMeta[];
@@ -85,6 +88,8 @@ export default function AdminPanelView({
   isLoadingHistory,
   openCandidateDetail,
   closeCandidateDetail,
+  isBackfillingLocations,
+  backfillLocations,
   books,
   dragActive,
   bookUploading,
@@ -301,6 +306,17 @@ export default function AdminPanelView({
                   title={language === 'FR' ? "Rafraîchir" : "Refresh logs"}
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isLoadingAllUsers ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={backfillLocations}
+                  disabled={isBackfillingLocations}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-indigo-950 transition-all cursor-pointer text-[10px] font-black disabled:opacity-60"
+                  title={language === 'FR'
+                    ? "Retenter la localisation pour les connexions historiques sans drapeau (n'affecte pas les candidats sans aucun historique)"
+                    : "Retry location lookup for historical logins missing a flag (won't help candidates with no login history at all)"}
+                >
+                  <Globe className={`w-3.5 h-3.5 ${isBackfillingLocations ? 'animate-spin' : ''}`} />
+                  {language === 'FR' ? "Localisations" : "Locations"}
                 </button>
               </div>
             </div>
