@@ -127,6 +127,35 @@ export default function AdminPanelView({
     }
   };
 
+  // Shared with both the Candidate Tracker table row and the per-candidate detail modal, so the
+  // two views can never drift apart on how a date/duration/score is computed or displayed.
+  const formatAccessDate = (iso?: string) => {
+    if (!iso) return language === 'FR' ? 'Jamais' : 'Never';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return language === 'FR' ? 'Jamais' : 'Never';
+    return d.toLocaleString(language === 'FR' ? 'fr-FR' : 'en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  };
+
+  const formatDuration = (studySecs: number) => {
+    const h = Math.floor(studySecs / 3600);
+    const m = Math.floor((studySecs % 3600) / 60);
+    const s = studySecs % 60;
+    return h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+  };
+
+  const getUserScore = (u: UserSession) => {
+    const answered = u.totalAnswered || 0;
+    // Defensive fallback only - scorePercentage is always populated in practice, so this branch
+    // is normally unreachable. Derives from the real `mastery` breakdown rather than a
+    // `totalCorrect` field that was never actually part of the UserSession schema.
+    const masteryCorrect = u.mastery
+      ? u.mastery.People.correct + u.mastery.Process.correct + u.mastery['Business Environment'].correct
+      : 0;
+    return u.scorePercentage ?? (answered > 0 ? Math.round((masteryCorrect / answered) * 100) : 0);
+  };
+
   // Renders an actual flag image (flagcdn.com, free, no key) rather than a Unicode flag emoji -
   // Windows/Chrome in particular has no built-in color-flag emoji font, so a regional-indicator
   // emoji sequence silently falls back to rendering as plain "MA"-style text there instead of a
@@ -308,29 +337,9 @@ export default function AdminPanelView({
                       const isUserAdmin = u.role === 'admin';
                       const isUserRestricted = u.accessStatus === 'restricted';
                       const isUserPending = u.accessStatus === 'pending';
-                      const formatAccessDate = (iso?: string) => {
-                        if (!iso) return language === 'FR' ? 'Jamais' : 'Never';
-                        const d = new Date(iso);
-                        if (isNaN(d.getTime())) return language === 'FR' ? 'Jamais' : 'Never';
-                        return d.toLocaleString(language === 'FR' ? 'fr-FR' : 'en-US', {
-                          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                        });
-                      };
                       const answered = u.totalAnswered || 0;
-                      // Defensive fallback only - scorePercentage is always populated in
-                      // practice, so this branch is normally unreachable. Derives from the real
-                      // `mastery` breakdown rather than a `totalCorrect` field that was never
-                      // actually part of the UserSession schema.
-                      const masteryCorrect = u.mastery
-                        ? u.mastery.People.correct + u.mastery.Process.correct + u.mastery['Business Environment'].correct
-                        : 0;
-                      const userScore = u.scorePercentage ?? (answered > 0 ? Math.round((masteryCorrect / answered) * 100) : 0);
-
-                      const studySecs = u.durationOfUtilization || 0;
-                      const h = Math.floor(studySecs / 3600);
-                      const m = Math.floor((studySecs % 3600) / 60);
-                      const s = studySecs % 60;
-                      const durationStr = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+                      const userScore = getUserScore(u);
+                      const durationStr = formatDuration(u.durationOfUtilization || 0);
 
                       return (
                         <tr key={u.userId} className="hover:bg-slate-50/50 transition-colors font-bold text-slate-700">
@@ -724,6 +733,62 @@ export default function AdminPanelView({
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Profile summary - reprises the same fields/computations shown for this candidate's
+                row in the Candidate Tracker table (via the shared formatAccessDate/formatDuration/
+                getUserScore helpers above) so the two views can never disagree with each other. */}
+            {detailCandidate && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                  <div className="text-[9px] font-black text-slate-600 uppercase truncate">
+                    {language === 'FR' ? "Dernier Accès" : "Last Access"}
+                  </div>
+                  <div className="text-[11px] font-black text-indigo-950">{formatAccessDate(detailCandidate.lastLoginAt)}</div>
+                  <div className="text-[9px] text-slate-600 font-bold">
+                    {language === 'FR' ? 'Créé : ' : 'Created: '}{formatAccessDate(detailCandidate.createdAt)}
+                  </div>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                  <div className="text-[9px] font-black text-slate-600 uppercase truncate">
+                    {language === 'FR' ? "Temps Travaillé" : "Study Tracker"}
+                  </div>
+                  <div className="text-[11px] font-black text-indigo-950">{formatDuration(detailCandidate.durationOfUtilization || 0)}</div>
+                  <div className="text-[9px] text-slate-600 font-bold">{detailCandidate.totalAnswered || 0} {language === 'FR' ? 'répondues' : 'solved'}</div>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                  <div className="text-[9px] font-black text-slate-600 uppercase truncate">
+                    {language === 'FR' ? "Examens Blancs" : "Mock Count"}
+                  </div>
+                  <div className="text-[11px] font-black text-indigo-950">{detailCandidate.testsCount || 0} / {appTestsLimit}</div>
+                  <div className="text-[9px] text-slate-600 font-bold">
+                    {language === 'FR' ? 'Moyenne : ' : 'Avg: '}{getUserScore(detailCandidate)}%
+                  </div>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+                  <div className="text-[9px] font-black text-slate-600 uppercase truncate">
+                    {language === 'FR' ? "Droits Système" : "Authorization"}
+                  </div>
+                  <span className={`inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-black mt-1 ${
+                    detailCandidate.accessStatus === 'restricted'
+                      ? 'bg-rose-50 text-rose-700 border border-rose-200/50'
+                      : detailCandidate.accessStatus === 'pending'
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200/50'
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200/50'
+                  }`}>
+                    {detailCandidate.accessStatus === 'restricted' ? (
+                      <><Lock className="w-2.5 h-2.5 text-rose-500" /><span>RESTRICT</span></>
+                    ) : detailCandidate.accessStatus === 'pending' ? (
+                      <><Clock className="w-2.5 h-2.5 text-amber-500" /><span>PENDING</span></>
+                    ) : (
+                      <><Check className="w-2.5 h-2.5 text-emerald-500" /><span>GRANTED</span></>
+                    )}
+                  </span>
+                  {detailCandidate.role === 'admin' && (
+                    <div className="text-[8px] font-black font-mono text-amber-600 mt-1">ADMIN</div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Domain scores */}
             <div className="space-y-3">
