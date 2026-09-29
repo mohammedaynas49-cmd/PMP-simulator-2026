@@ -1885,6 +1885,48 @@ async function startServer() {
     const activeGenSource = generationSource || "combine";
     console.log(`Generating question: Domain=${selectedDomain}, Methodology=${selectedMethodology}, Subject=${selectedSubject}, Phase=${selectedPhase}, DifficultyLevel=${difficultyTag} (session count=${count}), Context=${extraContext}, Language=${isFrench ? "French" : "English"}, SourceMode=${activeGenSource}`);
 
+    // "PMP Situational Scenario" questions in "docs solely" mode are served from a dedicated
+    // uploaded book (filename contains "situational", same filename-based classification pattern
+    // already used for glossary/PMBOK 8/PMBOK 7 elsewhere in this file) instead of being AI-drafted
+    // - real questions extracted verbatim at upload time via extractQuestionsFromBook, the same
+    // pipeline the Extracted Questions feature already uses. AI drafting only kicks back in once
+    // that pool is exhausted (or no such book exists), or whenever the admin's chosen source is
+    // "ai"/"combine" - candidates are always forced to "docs" (see DomainPracticeView.tsx), so this
+    // is effectively their default situational-question source, with AI as the admin-gated option.
+    if (questionType !== "definition" && activeGenSource === "docs") {
+      try {
+        const booksSnap = await withFirestoreTimeout(
+          collection(db, "books").get(),
+          "list books for situational extraction"
+        );
+        const situationalBook = booksSnap.docs.find(d => (d.data().name || "").toLowerCase().includes("situational"));
+        if (situationalBook) {
+          const extractedSnap = await withFirestoreTimeout(
+            collection(db, "questions").where("source_book_id", "==", situationalBook.id).get(),
+            "list extracted situational questions"
+          );
+          const excludeSet = new Set(Array.isArray(excludeIds) ? excludeIds : []);
+          const unused = extractedSnap.docs
+            .map(d => d.data())
+            .filter(q => !excludeSet.has(q.question_id));
+          if (unused.length > 0) {
+            const picked = unused[Math.floor(Math.random() * unused.length)];
+            console.log(`[Situational Extraction] Serving a real question from "${situationalBook.data().name}" (${unused.length} unused left).`);
+            return res.json({
+              question: { ...picked, question_focus_type: "situational" },
+              fallback: false,
+              message: isFrench
+                ? "Question extraite de votre document de questions situationnelles."
+                : "Question extracted from your dedicated situational questions document."
+            });
+          }
+          console.log(`[Situational Extraction] "${situationalBook.data().name}" found but its extracted pool is exhausted - falling back to docs-grounded generation.`);
+        }
+      } catch (situationalErr) {
+        console.error("Error serving extracted situational question (falling back to generation):", situationalErr);
+      }
+    }
+
     // Try to retrieve concepts/excerpts from uploaded custom study reference books to combine them
     let groundedBookContext = "";
     let groundedBookName = "";

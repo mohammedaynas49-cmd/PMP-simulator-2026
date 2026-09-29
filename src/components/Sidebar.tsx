@@ -131,7 +131,7 @@ export default function Sidebar({
   const getMasteryPill = (ratio: number, count: number) => {
     if (count === 0) {
       return (
-        <span className="text-[9px] font-bold font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">
+        <span className="text-[9px] font-bold font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
           {texts.badgeNotStarted}
         </span>
       );
@@ -184,7 +184,7 @@ export default function Sidebar({
           <button
             id="sidebar_close_btn"
             onClick={onCloseMobile}
-            className="md:hidden p-1.5 -mr-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer shrink-0"
+            className="md:hidden p-1.5 -mr-1.5 rounded-lg text-slate-600 hover:text-slate-700 hover:bg-slate-100 cursor-pointer shrink-0"
             aria-label={language === 'FR' ? 'Fermer le menu' : 'Close menu'}
           >
             <X className="w-5 h-5" />
@@ -217,7 +217,7 @@ export default function Sidebar({
       {/* Navigation Options - Mode Slection */}
       <div className="p-6 flex-1 overflow-y-auto space-y-6" id="sidebar_nav">
         <div>
-          <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3 flex items-center gap-2">
             <Compass className="w-3.5 h-3.5 text-indigo-400" /> {texts.simulationMode}
           </h4>
           <div className="space-y-2">
@@ -231,7 +231,7 @@ export default function Sidebar({
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <BookOpen className={`w-4 h-4 ${selectedMode === 'domain' ? 'text-violet-600' : 'text-slate-500'}`} />
+                <BookOpen className={`w-4 h-4 ${selectedMode === 'domain' ? 'text-violet-600' : 'text-slate-600'}`} />
                 <span className="text-sm">{texts.domainPractice}</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-600 font-mono font-black shadow-xxs">ECO</span>
@@ -246,7 +246,7 @@ export default function Sidebar({
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <Award className={`w-4 h-4 ${selectedMode === 'exam' ? 'text-rose-600' : 'text-slate-500'}`} />
+                <Award className={`w-4 h-4 ${selectedMode === 'exam' ? 'text-rose-600' : 'text-slate-600'}`} />
                 <span className="text-sm">{texts.fullMock}</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-rose-200 text-rose-500 font-mono font-black shadow-xxs">230m</span>
@@ -261,7 +261,7 @@ export default function Sidebar({
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <ListChecks className={`w-4 h-4 ${selectedMode === 'extracted' ? 'text-indigo-600' : 'text-slate-500'}`} />
+                <ListChecks className={`w-4 h-4 ${selectedMode === 'extracted' ? 'text-indigo-600' : 'text-slate-600'}`} />
                 <span className="text-sm">{texts.extractedQuestions}</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-indigo-200 text-indigo-600 font-mono font-black shadow-xxs">📄</span>
@@ -276,7 +276,7 @@ export default function Sidebar({
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <Shuffle className={`w-4 h-4 ${selectedMode === 'matching' ? 'text-violet-600' : 'text-slate-500'}`} />
+                <Shuffle className={`w-4 h-4 ${selectedMode === 'matching' ? 'text-violet-600' : 'text-slate-600'}`} />
                 <span className="text-sm">{texts.matchingExercise}</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-500 font-mono font-black shadow-xxs">4-5</span>
@@ -291,7 +291,7 @@ export default function Sidebar({
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <Search className={`w-4 h-4 ${selectedMode === 'definitions' ? 'text-teal-600' : 'text-slate-500'}`} />
+                <Search className={`w-4 h-4 ${selectedMode === 'definitions' ? 'text-teal-600' : 'text-slate-600'}`} />
                 <span className="text-sm">{texts.definitionsSearch}</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-teal-200 text-teal-600 font-mono font-black shadow-xxs">📖</span>
@@ -307,7 +307,7 @@ export default function Sidebar({
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <BookOpen className={`w-4 h-4 ${selectedMode === 'book' ? 'text-violet-600' : 'text-slate-500'}`} />
+                  <BookOpen className={`w-4 h-4 ${selectedMode === 'book' ? 'text-violet-600' : 'text-slate-600'}`} />
                   <span className="text-sm">{texts.bookCompanion}</span>
                 </div>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-violet-200 text-violet-500 font-mono font-black shadow-xxs">PDF</span>
@@ -324,7 +324,7 @@ export default function Sidebar({
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <Settings className={`w-4 h-4 ${selectedMode === 'admin' ? 'text-red-500' : 'text-slate-500'}`} />
+                  <Settings className={`w-4 h-4 ${selectedMode === 'admin' ? 'text-red-500' : 'text-slate-600'}`} />
                   <span className="text-sm">{texts.adminControl}</span>
                 </div>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-white border border-red-200 text-red-500 font-mono font-black shadow-xxs">CTRL</span>
@@ -381,7 +381,7 @@ export default function Sidebar({
 
         {/* Progress Tracker / Domain Analytics */}
         <div>
-          <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+          <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3 flex items-center gap-2">
             <Zap className="w-3.5 h-3.5 text-violet-500" /> {texts.analytics}
           </h4>
           <div className="bg-gradient-to-tr from-indigo-50/30 to-violet-50/20 p-4 rounded-xl border border-indigo-100/40 space-y-4">
@@ -408,7 +408,7 @@ export default function Sidebar({
                       <span className="text-slate-700 font-bold truncate w-24">
                         {getDomainDisplayName(domain)}
                       </span>
-                      <span className="text-slate-500 font-semibold">
+                      <span className="text-slate-600 font-semibold">
                         {stats.correct}/{stats.answered}
                       </span>
                     </div>
@@ -446,10 +446,10 @@ export default function Sidebar({
           onClick={onLogout}
           className="flex items-center gap-2 text-slate-600 hover:text-rose-600 text-xs font-extrabold py-1 px-3 rounded-lg hover:bg-slate-100/50 transition-colors cursor-pointer group"
         >
-          <LogOut className="w-4 h-4 text-slate-500 group-hover:text-rose-600" />
+          <LogOut className="w-4 h-4 text-slate-600 group-hover:text-rose-600" />
           <span>{texts.logout}</span>
         </button>
-        <span className="text-[10px] font-mono font-bold text-slate-500">v2.1 (FR-EN)</span>
+        <span className="text-[10px] font-mono font-bold text-slate-600">v2.1 (FR-EN)</span>
       </div>
     </aside>
   );

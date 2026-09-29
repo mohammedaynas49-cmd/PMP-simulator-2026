@@ -932,7 +932,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         <h2 className="text-2xl font-black text-rose-950 tracking-tight">
           {language === 'FR' ? "Accès Limité / Restreint" : "Simulator Access Restricted"}
         </h2>
-        <p className="text-sm text-slate-500 font-bold leading-relaxed">
+        <p className="text-sm text-slate-600 font-bold leading-relaxed">
           {language === 'FR' 
             ? "Votre compte d'entraînement a été suspendu ou limité par l'administrateur de l'application. Veuillez le contacter pour rétablir vos droits d'accès à la simulation d'examen PMP."
             : "Your trial simulator account has been temporarily restricted or suspended by the system administrator. Please reach out to your instructor or admin to re-enable authorization."}
@@ -958,7 +958,7 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
         <h2 className="text-2xl font-black text-slate-800 tracking-tight">
           {language === 'FR' ? "Limite de Simulations Atteinte" : "Simulated Exam Limit Reached"}
         </h2>
-        <p className="text-xs text-slate-500 font-bold leading-relaxed">
+        <p className="text-xs text-slate-600 font-bold leading-relaxed">
           {language === 'FR' 
             ? `Vous avez atteint la limite d'essais pour l'examen blanc de 180 questions (${testsCount} / ${appTestsLimit} examens démarrés). Veuillez contacter l'administrateur pour augmenter vos droits de simulation.`
             : `You have successfully consumed your exam simulation limits (${testsCount} out of ${appTestsLimit} attempts initiated). Reach out to your class administrator to increase your exam session quota.`}

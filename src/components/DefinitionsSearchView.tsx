@@ -93,7 +93,7 @@ export default function DefinitionsSearchView({ language, isAdmin }: Definitions
         {/* Search bar */}
         <form onSubmit={handleSubmit} className="flex gap-2">
           <div className="flex-1 relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-600 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               id="definition_search_input"
               type="text"

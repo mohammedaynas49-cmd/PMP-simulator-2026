@@ -251,7 +251,7 @@ export default function BookCompanionView({
                     <span className="text-xs font-black text-slate-800 line-clamp-2 leading-snug">{b.name}</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteBook(b.id); }}
-                      className="p-1 rounded-lg hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
+                      className="p-1 rounded-lg hover:bg-rose-50 text-slate-600 hover:text-rose-600 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -293,7 +293,7 @@ export default function BookCompanionView({
                   <span className="text-[11px] font-black text-slate-700 block mt-1">
                     {bookUploading ? (language === 'FR' ? "Lave/Indexe..." : "Uploading...") : (language === 'FR' ? "Ajouter un livre" : "+ Add another book")}
                   </span>
-                  <span className="text-[9px] text-slate-500 block font-bold">PDF/TXT &lt; 150MB</span>
+                  <span className="text-[9px] text-slate-600 block font-bold">PDF/TXT &lt; 150MB</span>
                 </div>
               </div>
             </div>

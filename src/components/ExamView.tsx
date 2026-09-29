@@ -475,7 +475,7 @@ export default function ExamView({
 
           {/* Domain feedback matrices info box */}
           <div className="p-5 bg-gradient-to-b from-indigo-50/40 to-violet-50/30 border border-indigo-100 rounded-2xl text-left space-y-3">
-            <span className="text-xs font-black text-slate-500 uppercase tracking-widest font-mono">{texts.guidelinesTitle}</span>
+            <span className="text-xs font-black text-slate-600 uppercase tracking-widest font-mono">{texts.guidelinesTitle}</span>
             <p className="text-xs text-slate-600 leading-relaxed font-bold">
               {texts.guidelinesDesc}
             </p>

@@ -130,7 +130,7 @@ export default function DomainPracticeView({
                 <label className="block text-sm font-black text-indigo-950">
                   📋 {language === 'FR' ? "Focus de la Question" : "Question Focus Mode"}
                 </label>
-                <p className="text-xs text-slate-500 font-bold">
+                <p className="text-xs text-slate-600 font-bold">
                   {language === 'FR'
                     ? "Basculez entre des scénarios de situation réels ou des questions de terminologies dédiées à la maîtrise des définitions du PMBOK."
                     : "Toggle between real situational project scenarios or terminological questions dedicated to mastering PMBOK definitions."}
@@ -166,7 +166,7 @@ export default function DomainPracticeView({
                 <label className="block text-sm font-black text-indigo-950">
                   🎯 {language === 'FR' ? "Nombre de Questions" : "Number of Questions"}
                 </label>
-                <p className="text-xs text-slate-500 font-bold">
+                <p className="text-xs text-slate-600 font-bold">
                   {language === 'FR'
                     ? "Fixez un nombre de questions pour cette session, ou entraînez-vous sans limite."
                     : "Fix how many questions you want to work through this session, or practice without a limit."}
@@ -210,7 +210,7 @@ export default function DomainPracticeView({
                   <label className="block text-sm font-black text-indigo-950">
                     ⚙️ {language === 'FR' ? "Source de Génération des Questions" : "Question Generation Source"}
                   </label>
-                  <p className="text-xs text-slate-500 font-bold">
+                  <p className="text-xs text-slate-600 font-bold">
                     {language === 'FR'
                       ? "Sélectionnez comment l'application doit générer vos questions d'entraînement."
                       : "Choose how the application should generate your PMP practice questions."}
@@ -227,7 +227,7 @@ export default function DomainPracticeView({
                     >
                       <span className="text-lg">📚</span>
                       <span className="text-center">{language === 'FR' ? "1. Documents uniquement" : "1. Using the docs solely"}</span>
-                      <span className="text-[10px] text-slate-500 font-medium">{language === 'FR' ? "Seulement vos livres/glossaire" : "Only your books/glossary"}</span>
+                      <span className="text-[10px] text-slate-600 font-medium">{language === 'FR' ? "Seulement vos livres/glossaire" : "Only your books/glossary"}</span>
                     </button>
                     <button
                       type="button"
@@ -240,7 +240,7 @@ export default function DomainPracticeView({
                     >
                       <span className="text-lg">🧠</span>
                       <span className="text-center">{language === 'FR' ? "2. IA uniquement" : "2. Using AI"}</span>
-                      <span className="text-[10px] text-slate-500 font-medium">{language === 'FR' ? "Connaissances générales de l'IA" : "AI's general knowledge"}</span>
+                      <span className="text-[10px] text-slate-600 font-medium">{language === 'FR' ? "Connaissances générales de l'IA" : "AI's general knowledge"}</span>
                     </button>
                     <button
                       type="button"
@@ -253,7 +253,7 @@ export default function DomainPracticeView({
                     >
                       <span className="text-lg">🔮</span>
                       <span className="text-center">{language === 'FR' ? "3. Combiner (Docs + IA)" : "3. Combine (Docs + AI)"}</span>
-                      <span className="text-[10px] text-slate-500 font-medium">{language === 'FR' ? "Approche hybride ancrée" : "Grounded hybrid approach"}</span>
+                      <span className="text-[10px] text-slate-600 font-medium">{language === 'FR' ? "Approche hybride ancrée" : "Grounded hybrid approach"}</span>
                     </button>
                   </div>
                 </div>
@@ -275,7 +275,7 @@ export default function DomainPracticeView({
                 <label className="block text-sm font-black text-indigo-950">
                   📁 {language === 'FR' ? "Domaine ECO du PMI" : "Target ECO Domain"}
                 </label>
-                <p className="text-xs text-slate-500 font-bold">
+                <p className="text-xs text-slate-600 font-bold">
                   {language === 'FR' ? "Choisissez un pilier de l'économie de projet PMI" : "Select an official Exam Content Outline pillar"}
                 </p>
                 <select
@@ -295,7 +295,7 @@ export default function DomainPracticeView({
                 <label className="block text-sm font-black text-indigo-950">
                   🔄 {language === 'FR' ? "Méthodologie du projet" : "Project Methodology"}
                 </label>
-                <p className="text-xs text-slate-500 font-bold">
+                <p className="text-xs text-slate-600 font-bold">
                   {language === 'FR' ? "Style de gestion et de cycle de vie" : "Development lifecycle approach"}
                 </p>
                 <select
@@ -315,7 +315,7 @@ export default function DomainPracticeView({
                 <label className="block text-sm font-black text-indigo-950">
                   🎯 {language === 'FR' ? "Sujet / Connaissance spécifique" : "Specific Subject / Focus Area"}
                 </label>
-                <p className="text-xs text-slate-500 font-bold">
+                <p className="text-xs text-slate-600 font-bold">
                   {language === 'FR' ? "Thème technique issu du PMBOK 8" : "Technical concept or chapter from PMBOK"}
                 </p>
                 <select
@@ -343,7 +343,7 @@ export default function DomainPracticeView({
                 <label className="block text-sm font-black text-indigo-950">
                   ⏳ {language === 'FR' ? "Phase du Projet / Groupe de processus" : "Project Phase / Process Group"}
                 </label>
-                <p className="text-xs text-slate-500 font-bold">
+                <p className="text-xs text-slate-600 font-bold">
                   {language === 'FR' ? "Étape chronologique de mise en situation" : "Chronological placement of the corporate scenario"}
                 </p>
                 <select
@@ -473,7 +473,7 @@ export default function DomainPracticeView({
                 <div key={domain} className={`p-5 rounded-3xl border flex flex-col justify-between shadow-xs transition-colors duration-300 hover:scale-[1.02] ${cardStyle}`}>
                   <div className="flex justify-between items-start gap-4">
                     <div className="min-w-0">
-                      <span className="text-[10px] font-black font-mono text-slate-500 tracking-wider uppercase block">{language === 'FR' ? "DOMAINE ECO" : "ECO DOMAIN"}</span>
+                      <span className="text-[10px] font-black font-mono text-slate-600 tracking-wider uppercase block">{language === 'FR' ? "DOMAINE ECO" : "ECO DOMAIN"}</span>
                       <h4 className="text-sm font-black truncate mt-1 leading-tight text-indigo-950">{label}</h4>
                     </div>
                     <span className={`text-[9px] uppercase tracking-wide px-2 py-1 border rounded-lg leading-none shrink-0 ${badgeStyle}`}>
