@@ -1157,14 +1157,6 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
                     : "Your access to this simulator has been revoked by an administrator. Contact them if you believe this is a mistake.")}
             </p>
           </div>
-          {user?.uid && (
-            <p id="access_locked_account_code" className="text-xs font-mono font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-2xl p-3">
-              {language === 'FR' ? "Votre code de compte (à communiquer à l'administrateur) : " : "Your account code (give it to the administrator): "}
-              <span className="text-indigo-700 font-black">
-                {user.isAnonymous ? '#' + user.uid.replace(/[^a-z0-9]/gi, '').slice(0, 4).toUpperCase() : user.email}
-              </span>
-            </p>
-          )}
           {user?.isAnonymous && (
             <p id="access_locked_guest_note" className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-3 leading-relaxed">
               {language === 'FR'
