@@ -678,6 +678,10 @@ async function startServer() {
   // of document size; a book's own `extractedQuestionsCount` field reflects how far it got.
   const MAX_EXTRACTION_CHUNKS = 40;
   const EXTRACTION_BATCH_SIZE = 3;
+  // A real case-study bank can run to dozens of pages with many distinct case studies (a flat
+  // question bank rarely does) - bounded separately, well above MAX_EXTRACTION_CHUNKS, so a large
+  // real document isn't silently truncated.
+  const MAX_CASE_STUDY_CHUNKS = 80;
 
   async function extractQuestionsFromBook(bookId: string, bookName: string, chunks: string[]) {
     const bookRef = doc(db, "books", bookId);
@@ -815,129 +819,159 @@ async function startServer() {
       return;
     }
 
-    const chunksToScan = chunks.slice(0, MAX_EXTRACTION_CHUNKS);
-    const fullText = chunksToScan.join("\n\n---\n\n");
-    let extractedCount = 0;
+    const chunksToScan = chunks.slice(0, MAX_CASE_STUDY_CHUNKS);
 
-    try {
-      const extractionPrompt = `
-      You are scanning a candidate's uploaded PMP "case study" document. A case study consists of
-      ONE shared narrative/scenario describing a project situation, followed by SEVERAL (typically
-      3-5) separate multiple-choice questions that all refer back to that same shared scenario -
-      NOT standalone questions each with their own independent scenario.
+    // A single Gemini call over the WHOLE document works for a short file, but a real
+    // multi-case-study document (tested against a real 56-page/~30-chunk bank with ~20 case
+    // studies) produces a huge combined prompt and an equally huge structured JSON response -
+    // in practice this silently produced ZERO results, almost certainly a truncated/malformed
+    // response that failed to parse. Processing overlapping SLIDING WINDOWS of chunks instead
+    // keeps each individual call's prompt/response to a manageable size; the overlap (2 of every
+    // 6 chunks) ensures a case study's narrative and its questions - which can span a chunk
+    // boundary - still land fully within at least one window.
+    const WINDOW_SIZE = 6;
+    const WINDOW_STEP = 4;
+    const windows: string[][] = [];
+    for (let i = 0; i < chunksToScan.length; i += WINDOW_STEP) {
+      windows.push(chunksToScan.slice(i, i + WINDOW_SIZE));
+      if (i + WINDOW_SIZE >= chunksToScan.length) break;
+    }
+    if (windows.length === 0 && chunksToScan.length > 0) windows.push(chunksToScan);
 
-      Find every complete case study in the text below: its shared scenario/narrative, plus its
-      related questions, each with exactly 4 answer options and either an explicitly stated
-      correct answer or an answer key/explanation elsewhere in the excerpt that lets you determine
-      it with certainty. Preserve the original wording and language of both the narrative and each
-      question; do not invent, rephrase, embellish, or add details that are not present.
+    const extractionPromptFor = (windowText: string) => `
+    You are scanning an excerpt of a candidate's uploaded PMP "case study" document. A case study
+    consists of ONE shared narrative/scenario describing a project situation, followed by SEVERAL
+    (typically 3-5) separate multiple-choice questions that all refer back to that same shared
+    scenario - NOT standalone questions each with their own independent scenario.
 
-      If a case study is incomplete (its narrative is not present in this excerpt, fewer than 2
-      of its questions are usable, or you cannot determine a correct answer for a question), leave
-      it out rather than guessing. If the excerpt contains no complete case study at all, return
-      an empty "case_studies" array.
+    Find every complete case study in the text below: its shared scenario/narrative, plus its
+    related questions, each with exactly 4 answer options and either an explicitly stated
+    correct answer or an answer key/explanation elsewhere in the excerpt that lets you determine
+    it with certainty. Preserve the original wording and language of both the narrative and each
+    question (the document may be in any language - extract in that same language, do not
+    translate); do not invent, rephrase, embellish, or add details that are not present.
 
-      [DOCUMENT EXCERPT]
-      ${fullText}
-      [END DOCUMENT EXCERPT]
-      `;
+    This excerpt is one window of a larger document, so it may start or end mid-case-study - only
+    extract a case study if its FULL narrative AND at least 2 of its questions are present in
+    THIS excerpt. If a case study is incomplete here (narrative missing, fewer than 2 usable
+    questions, or a correct answer can't be determined), leave it out rather than guessing - it
+    will be captured from a different, overlapping window instead. If this excerpt contains no
+    complete case study at all, return an empty "case_studies" array.
 
-      const response = await generateContentWithRetry(client, {
-        model: "gemini-3.5-flash",
-        contents: extractionPrompt,
-        config: {
-          temperature: 0.1,
-          responseMimeType: "application/json",
-          responseSchema: {
+    [DOCUMENT EXCERPT]
+    ${windowText}
+    [END DOCUMENT EXCERPT]
+    `;
+
+    const caseStudySchema = {
+      type: Type.OBJECT,
+      properties: {
+        case_studies: {
+          type: Type.ARRAY,
+          items: {
             type: Type.OBJECT,
             properties: {
-              case_studies: {
+              scenario_title: { type: Type.STRING },
+              scenario_text: { type: Type.STRING },
+              questions: {
                 type: Type.ARRAY,
                 items: {
                   type: Type.OBJECT,
                   properties: {
-                    scenario_title: { type: Type.STRING },
-                    scenario_text: { type: Type.STRING },
-                    questions: {
-                      type: Type.ARRAY,
-                      items: {
-                        type: Type.OBJECT,
-                        properties: {
-                          eco_domain: { type: Type.STRING, enum: ["People", "Process", "Business Environment"] },
-                          scenario: { type: Type.STRING },
-                          options: { type: Type.ARRAY, items: { type: Type.STRING } },
-                          correct_option: { type: Type.STRING, enum: ["A", "B", "C", "D"] },
-                          explanation: { type: Type.STRING },
-                          methodology: { type: Type.STRING, enum: ["Agile/Hybrid", "Predictive"] },
-                          tags: { type: Type.ARRAY, items: { type: Type.STRING } }
-                        },
-                        required: ["eco_domain", "scenario", "options", "correct_option", "explanation", "methodology", "tags"]
-                      }
-                    }
+                    eco_domain: { type: Type.STRING, enum: ["People", "Process", "Business Environment"] },
+                    scenario: { type: Type.STRING },
+                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    correct_option: { type: Type.STRING, enum: ["A", "B", "C", "D"] },
+                    explanation: { type: Type.STRING },
+                    methodology: { type: Type.STRING, enum: ["Agile/Hybrid", "Predictive"] },
+                    tags: { type: Type.ARRAY, items: { type: Type.STRING } }
                   },
-                  required: ["scenario_title", "scenario_text", "questions"]
+                  required: ["eco_domain", "scenario", "options", "correct_option", "explanation", "methodology", "tags"]
                 }
               }
             },
-            required: ["case_studies"]
+            required: ["scenario_title", "scenario_text", "questions"]
           }
         }
-      }, 2);
+      },
+      required: ["case_studies"]
+    };
 
-      const rawText = response.text;
-      if (rawText) {
+    const foundCaseStudies: { scenario_title: string; scenario_text: string; questions: any[] }[] = [];
+    const seenKeys = new Set<string>();
+
+    for (let w = 0; w < windows.length; w++) {
+      const windowText = windows[w].join("\n\n---\n\n");
+      try {
+        const response = await generateContentWithRetry(client, {
+          model: "gemini-3.5-flash",
+          contents: extractionPromptFor(windowText),
+          config: { temperature: 0.1, responseMimeType: "application/json", responseSchema: caseStudySchema }
+        }, 2);
+
+        const rawText = response.text;
+        if (!rawText) continue;
         const parsed = JSON.parse(rawText);
-        const foundCaseStudies = Array.isArray(parsed.case_studies) ? parsed.case_studies : [];
+        const windowCaseStudies = Array.isArray(parsed.case_studies) ? parsed.case_studies : [];
 
-        for (let csIndex = 0; csIndex < foundCaseStudies.length; csIndex++) {
-          const cs = foundCaseStudies[csIndex];
+        for (const cs of windowCaseStudies) {
           if (!cs || typeof cs.scenario_text !== "string" || !Array.isArray(cs.questions) || cs.questions.length < 2) {
             continue; // skip anything that doesn't cleanly match a real case study rather than guessing
           }
-          const caseStudyId = `casestudy_${bookId}_${csIndex}`;
-          let qIndex = 0;
-          for (const q of cs.questions) {
-            if (
-              !q || typeof q.scenario !== "string" || !Array.isArray(q.options) || q.options.length !== 4 ||
-              !["A", "B", "C", "D"].includes(q.correct_option)
-            ) {
-              continue;
-            }
-            // Zero-padded question index in the id so lexicographic sorting (used when serving,
-            // see /api/questions/generate below) matches the case study's original question order.
-            const questionId = `extracted_casestudy_${bookId}_${csIndex}_${String(qIndex).padStart(2, "0")}`;
-            await setDoc(doc(db, "questions", questionId), {
-              question_id: questionId,
-              eco_domain: q.eco_domain,
-              scenario: q.scenario,
-              options: q.options,
-              correct_option: q.correct_option,
-              explanation: q.explanation || "Extracted from uploaded case study material.",
-              pmbok_8_reference: `Extracted from: ${bookName}`,
-              methodology: q.methodology === "Predictive" ? "Predictive" : "Agile/Hybrid",
-              tags: Array.isArray(q.tags) ? q.tags.slice(0, 10) : [],
-              source_book_id: bookId,
-              grounded_book_name: bookName,
-              case_study_id: caseStudyId,
-              case_study_title: cs.scenario_title || "Case Study",
-              case_study_scenario: cs.scenario_text,
-              series_type: "case_study",
-              series_label: `Q${qIndex + 1}/${cs.questions.length}`,
-              // Explicit numeric total (not just parsed from series_label) so the client can size
-              // the practice session's target count to exactly how many questions this specific
-              // case study has, instead of an unrelated fixed preset (5/10/20/50).
-              case_study_total_questions: cs.questions.length,
-              question_focus_type: "case_study"
-            });
-            extractedCount++;
-            qIndex++;
-          }
+          // Overlapping windows often re-extract the same case study more than once - dedupe by a
+          // normalized prefix of its (verbatim, low-temperature) scenario text.
+          const dedupKey = cs.scenario_text.toLowerCase().replace(/\s+/g, " ").trim().slice(0, 150);
+          if (seenKeys.has(dedupKey)) continue;
+          seenKeys.add(dedupKey);
+          foundCaseStudies.push(cs);
         }
+      } catch (err) {
+        console.error(`[Case Study Extraction] Window ${w + 1}/${windows.length} failed for "${bookName}":`, err);
+        // Best-effort: keep going with the remaining windows rather than aborting the whole document.
       }
-    } catch (err) {
-      console.error(`[Case Study Extraction] Failed for "${bookName}":`, err);
-      // Best-effort: fall through to the final status update below rather than leaving the book
-      // doc stuck on "pending" forever.
+    }
+
+    let extractedCount = 0;
+    for (let csIndex = 0; csIndex < foundCaseStudies.length; csIndex++) {
+      const cs = foundCaseStudies[csIndex];
+      const caseStudyId = `casestudy_${bookId}_${csIndex}`;
+      let qIndex = 0;
+      for (const q of cs.questions) {
+        if (
+          !q || typeof q.scenario !== "string" || !Array.isArray(q.options) || q.options.length !== 4 ||
+          !["A", "B", "C", "D"].includes(q.correct_option)
+        ) {
+          continue;
+        }
+        // Zero-padded question index in the id so lexicographic sorting (used when serving,
+        // see /api/questions/generate below) matches the case study's original question order.
+        const questionId = `extracted_casestudy_${bookId}_${csIndex}_${String(qIndex).padStart(2, "0")}`;
+        await setDoc(doc(db, "questions", questionId), {
+          question_id: questionId,
+          eco_domain: q.eco_domain,
+          scenario: q.scenario,
+          options: q.options,
+          correct_option: q.correct_option,
+          explanation: q.explanation || "Extracted from uploaded case study material.",
+          pmbok_8_reference: `Extracted from: ${bookName}`,
+          methodology: q.methodology === "Predictive" ? "Predictive" : "Agile/Hybrid",
+          tags: Array.isArray(q.tags) ? q.tags.slice(0, 10) : [],
+          source_book_id: bookId,
+          grounded_book_name: bookName,
+          case_study_id: caseStudyId,
+          case_study_title: cs.scenario_title || "Case Study",
+          case_study_scenario: cs.scenario_text,
+          series_type: "case_study",
+          series_label: `Q${qIndex + 1}/${cs.questions.length}`,
+          // Explicit numeric total (not just parsed from series_label) so the client can size
+          // the practice session's target count to exactly how many questions this specific
+          // case study has, instead of an unrelated fixed preset (5/10/20/50).
+          case_study_total_questions: cs.questions.length,
+          question_focus_type: "case_study"
+        });
+        extractedCount++;
+        qIndex++;
+      }
     }
 
     await bookRef.update({
@@ -945,7 +979,7 @@ async function startServer() {
       extractedQuestionsCount: extractedCount
     }).catch(err => console.error("[Case Study Extraction] Failed to update book doc with final count:", err));
 
-    console.log(`[Case Study Extraction] Found ${extractedCount} question(s) across case studies in "${bookName}" (scanned ${chunksToScan.length}/${chunks.length} chunks).`);
+    console.log(`[Case Study Extraction] Found ${extractedCount} question(s) across ${foundCaseStudies.length} case stud${foundCaseStudies.length === 1 ? "y" : "ies"} in "${bookName}" (scanned ${chunksToScan.length}/${chunks.length} chunks across ${windows.length} window(s)).`);
   }
 
   // Upload a PMP book (accepts PDF and TXT up to 150MB)
