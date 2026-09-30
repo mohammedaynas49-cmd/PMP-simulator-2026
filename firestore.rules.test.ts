@@ -183,32 +183,6 @@ describe("sessions collection", () => {
     );
   });
 
-  it("allows a guest session to be created with isGuest + guestName", async () => {
-    const g = testEnv.authenticatedContext("guest1").firestore();
-    await assertSucceeds(
-      setDoc(doc(g, "sessions", "guest1"), validSession({ userId: "guest1", isGuest: true, guestName: "Sarah" }))
-    );
-  });
-
-  it("denies an oversized guestName", async () => {
-    const g = testEnv.authenticatedContext("guest1").firestore();
-    await assertFails(
-      setDoc(doc(g, "sessions", "guest1"), validSession({ userId: "guest1", isGuest: true, guestName: "x".repeat(41) }))
-    );
-  });
-
-  it("denies a guest renaming themselves or dropping the guest flag after creation", async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(
-        doc(ctx.firestore(), "sessions", "guest1"),
-        validSession({ userId: "guest1", isGuest: true, guestName: "Sarah" })
-      );
-    });
-    const g = testEnv.authenticatedContext("guest1").firestore();
-    await assertFails(updateDoc(doc(g, "sessions", "guest1"), { guestName: "Someone Else" }));
-    await assertFails(updateDoc(doc(g, "sessions", "guest1"), { isGuest: false }));
-  });
-
   // Dirty Dozen #2: Identity Spoofing / Session Takeover
   it("denies user A writing to user B's session", async () => {
     const alice = testEnv.authenticatedContext("alice").firestore();

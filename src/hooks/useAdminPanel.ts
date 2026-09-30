@@ -104,7 +104,6 @@ export function useAdminPanel({
     const searchVal = adminUserSearch.toLowerCase();
     return (
       (u.email || '').toLowerCase().includes(searchVal) ||
-      (u.guestName || '').toLowerCase().includes(searchVal) ||
       (u.userId || '').toLowerCase().includes(searchVal)
     );
   });

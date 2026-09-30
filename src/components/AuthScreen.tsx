@@ -22,8 +22,6 @@ const t = {
     initializing: "Initializing...",
     or: "or",
     guestBtn: "Enter as Guest Simulator",
-    guestNameLabel: "Your name (required for guest mode)",
-    guestNamePlaceholder: "e.g. Sarah Benali",
     footerHint: "Google Pop-ups are recommended. Guest mode skips account tracking profiles but offers full access to the exam."
   },
   FR: {
@@ -39,8 +37,6 @@ const t = {
     initializing: "Initialisation...",
     or: "ou",
     guestBtn: "Entrer en Mode Candidat Invité",
-    guestNameLabel: "Votre nom (obligatoire en mode invité)",
-    guestNamePlaceholder: "ex. Sarah Benali",
     footerHint: "Les pop-ups Google sont recommandés. Le mode invité évite le suivi de profil cloud mais offre un accès complet à la simulation."
   }
 };
@@ -48,7 +44,6 @@ const t = {
 export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [guestName, setGuestName] = useState('');
 
   const texts = t[language];
 
@@ -74,14 +69,8 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
   };
 
   const handleCandidateGuestSignIn = async () => {
-    const cleanName = guestName.trim().replace(/\s+/g, ' ').slice(0, 40);
-    if (cleanName.length < 2) return;
     setLoading(true);
     setError(null);
-    // Stored BEFORE signing in: onAuthStateChanged fires (and Dashboard creates the session doc)
-    // before any post-sign-in updateProfile() call could land, so the name must already be
-    // readable synchronously by then.
-    localStorage.setItem('pmp_guest_name', cleanName);
     try {
       // Create guest profile
       const result = await signInAnonymously(auth);
@@ -93,7 +82,7 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
       localStorage.setItem('pmp_guest_user', 'true');
       const mockGuestUser = {
         uid: 'guest-simulator',
-        displayName: cleanName,
+        displayName: 'Guest Candidate',
         email: 'guest@simulator.local',
         isAnonymous: true,
         photoURL: null,
@@ -191,26 +180,11 @@ export default function AuthScreen({ onAuthSuccess, language }: AuthScreenProps)
             <div className="flex-grow border-t-2 border-dotted border-slate-200"></div>
           </div>
 
-          <div className="space-y-1.5 text-left">
-            <label htmlFor="guest_name_input" className="text-[10px] font-mono uppercase tracking-widest font-black text-slate-600">
-              {texts.guestNameLabel}
-            </label>
-            <input
-              id="guest_name_input"
-              type="text"
-              value={guestName}
-              maxLength={40}
-              onChange={(e) => setGuestName(e.target.value)}
-              placeholder={texts.guestNamePlaceholder}
-              className="w-full border-2 border-slate-200 focus:border-violet-500 outline-none rounded-2xl px-4 py-3 text-sm font-bold text-slate-800"
-            />
-          </div>
-
           <button
             id="guest_signin_btn"
-            disabled={loading || guestName.trim().length < 2}
+            disabled={loading}
             onClick={handleCandidateGuestSignIn}
-            className="w-full bg-gradient-to-r from-violet-600 via-pink-600 to-amber-500 hover:from-violet-700 hover:to-amber-600 text-white py-4 px-4 rounded-2xl font-black text-sm transition-all text-center block shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-violet-600 via-pink-600 to-amber-500 hover:from-violet-700 hover:to-amber-600 text-white py-4 px-4 rounded-2xl font-black text-sm transition-all text-center block shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] cursor-pointer"
           >
             {texts.guestBtn}
           </button>

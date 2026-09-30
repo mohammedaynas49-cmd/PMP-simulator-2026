@@ -77,7 +77,6 @@ page.on("response", (r) => {
 console.log("\n=== 1. Guest login (real anonymous auth via emulator) ===");
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 await page.waitForSelector("#auth_portal", { timeout: 20000 });
-await page.locator("#guest_name_input").fill("Test Guest");
 await page.locator("#guest_signin_btn").click();
 // Every brand-new account starts 'pending' (Candidate Directory approval model) - lands on the
 // lockout screen first, not the sidebar. Bootstrapping straight to admin below (step 2) also
@@ -393,7 +392,6 @@ console.log("\n=== 10. A plain non-admin candidate can see and use PMP Definitio
 const nonAdminPage = await browser.newPage({ viewport: { width: 1400, height: 950 } });
 await nonAdminPage.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 await nonAdminPage.waitForSelector("#auth_portal", { timeout: 20000 });
-await nonAdminPage.locator("#guest_name_input").fill("Test Guest");
 await nonAdminPage.locator("#guest_signin_btn").click();
 // Starts 'pending' like any new account - approve it directly (not testing the approval flow
 // itself here, that's admin-panel-test.mjs step 6) so this can get on with testing what a

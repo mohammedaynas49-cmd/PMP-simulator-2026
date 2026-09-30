@@ -57,8 +57,6 @@ service cloud.firestore {
         (!data.keys().hasAny(['durationOfUtilization']) || (data.durationOfUtilization is int && data.durationOfUtilization >= 0)) &&
         (!data.keys().hasAny(['accessStatus']) || (data.accessStatus is string && (data.accessStatus == 'pending' || data.accessStatus == 'granted' || data.accessStatus == 'restricted'))) &&
         (!data.keys().hasAny(['role']) || (data.role is string && (data.role == 'admin' || data.role == 'candidate'))) &&
-        (!data.keys().hasAny(['isGuest']) || data.isGuest is bool) &&
-        (!data.keys().hasAny(['guestName']) || (data.guestName is string && data.guestName.size() <= 40)) &&
         (!data.keys().hasAny(['testsCount']) || (data.testsCount is int && data.testsCount >= 0)) &&
         (!data.keys().hasAny(['createdAt']) || (data.createdAt is string && data.createdAt.size() <= 64)) &&
         (!data.keys().hasAny(['lastLoginAt']) || (data.lastLoginAt is string && data.lastLoginAt.size() <= 64))
@@ -107,9 +105,7 @@ service cloud.firestore {
          incoming().userId == existing().userId &&
          incoming().email == existing().email &&
          incoming().role == existing().role &&
-         incoming().accessStatus == existing().accessStatus &&
-         incoming().get('isGuest', false) == existing().get('isGuest', false) &&
-         incoming().get('guestName', '') == existing().get('guestName', '')) ||
+         incoming().accessStatus == existing().accessStatus) ||
         isAdmin()
       );
       
