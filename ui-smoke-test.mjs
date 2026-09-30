@@ -62,6 +62,7 @@ async function main() {
   logStep("2. Enter as Guest Simulator");
   const guestBtn = page.locator("#guest_signin_btn");
   await guestBtn.waitFor({ state: "visible", timeout: 10000 });
+  await page.locator("#guest_name_input").fill("Smoke Tester");
   await guestBtn.click();
   // Every brand-new account starts 'pending' (see the Candidate Directory approval model) and is
   // locked out of the whole app until an admin approves it - that flow itself is covered by
@@ -258,6 +259,7 @@ async function main() {
   // no cookies/storage with the admin session tested above - a real second guest account.
   const candidatePage = await browser.newPage({ viewport: { width: 1400, height: 950 } });
   await candidatePage.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
+  await candidatePage.locator("#guest_name_input").fill("Test Guest");
   await candidatePage.locator("#guest_signin_btn").click();
   await candidatePage.waitForSelector("#access_locked_screen", { timeout: 15000 });
   const candidateSessions = await db.collection("sessions").where("accessStatus", "==", "pending").get();

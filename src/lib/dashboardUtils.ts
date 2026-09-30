@@ -26,3 +26,21 @@ export function cleanCoachText(text: string): string {
 
   return cleaned;
 }
+
+/** Guests all share the placeholder email guest@candidate.com, so they're told apart by the name
+ * they typed at sign-in plus a short uid-derived code (two guests may type the same name).
+ * Legacy guest sessions created before names existed have neither, so they fall back to the
+ * code alone. */
+export function isGuestSession(u: { isGuest?: boolean; email?: string }): boolean {
+  return !!u.isGuest || u.email === 'guest@candidate.com';
+}
+
+export function candidateLabel(
+  u: { userId: string; email?: string; isGuest?: boolean; guestName?: string },
+  language: 'EN' | 'FR' = 'EN'
+): string {
+  if (!isGuestSession(u)) return u.email || u.userId;
+  const code = u.userId.replace(/[^a-z0-9]/gi, '').slice(0, 4).toUpperCase();
+  const name = u.guestName?.trim() || (language === 'FR' ? 'Invité' : 'Guest');
+  return `${name} #${code}`;
+}

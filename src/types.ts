@@ -60,6 +60,10 @@ export interface UserSession {
   // previously granted - kept as a distinct value so the admin's own history/intent is clear).
   accessStatus?: 'pending' | 'granted' | 'restricted';
   role?: 'candidate' | 'admin'; // application level role
+  /** True for sessions created through "Enter as Guest" (anonymous auth). */
+  isGuest?: boolean;
+  /** Name the guest typed at sign-in (max 40 chars) - guests share one placeholder email. */
+  guestName?: string;
   testsCount?: number; // count of exams/tests taken
   createdAt?: string; // ISO timestamp, set once at first sign-in
   lastLoginAt?: string; // ISO timestamp, updated on every sign-in

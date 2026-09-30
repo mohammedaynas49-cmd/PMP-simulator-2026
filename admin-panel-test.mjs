@@ -64,6 +64,7 @@ page.on("console", (msg) => { if (msg.type() === "error") console.log("[console:
 console.log("\n=== 1. Guest login + bootstrap to admin ===");
 await page.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 await page.waitForSelector("#auth_portal", { timeout: 20000 });
+await page.locator("#guest_name_input").fill("Test Guest");
 await page.locator("#guest_signin_btn").click();
 await page.waitForSelector("#sidebar_main", { timeout: 15000 });
 await page.waitForTimeout(800);
@@ -130,6 +131,7 @@ const newCandidateContext = await browser.newContext();
 const newCandidatePage = await newCandidateContext.newPage();
 await newCandidatePage.goto("http://localhost:3000", { waitUntil: "domcontentloaded" });
 await newCandidatePage.waitForSelector("#auth_portal", { timeout: 20000 });
+await newCandidatePage.locator("#guest_name_input").fill("Test Guest");
 await newCandidatePage.locator("#guest_signin_btn").click();
 await newCandidatePage.waitForSelector("#access_locked_screen", { timeout: 15000 });
 const pendingScreenText = await newCandidatePage.locator("body").innerText();

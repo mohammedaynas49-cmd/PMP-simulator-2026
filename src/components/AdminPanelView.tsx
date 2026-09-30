@@ -1,5 +1,6 @@
 import React from 'react';
 import { UserSession } from '../types';
+import { candidateLabel, isGuestSession } from '../lib/dashboardUtils';
 import { BookMeta } from './BookCompanionView';
 import {
   Shield,
@@ -366,10 +367,15 @@ export default function AdminPanelView({
                                 <button
                                   onClick={() => openCandidateDetail(u.userId)}
                                   className="text-indigo-700 hover:text-indigo-900 hover:underline text-[11px] leading-tight truncate max-w-[150px] font-black text-left cursor-pointer"
-                                  title={language === 'FR' ? `Voir le détail de ${u.email}` : `View detail for ${u.email}`}
+                                  title={language === 'FR' ? `Voir le détail de ${candidateLabel(u, language)}` : `View detail for ${candidateLabel(u, language)}`}
                                 >
-                                  {u.email}
+                                  {candidateLabel(u, language)}
                                 </button>
+                                {isGuestSession(u) && (
+                                  <span className="px-1.5 py-0.2 text-[8px] rounded-sm font-black font-mono bg-violet-50 border border-violet-200 text-violet-600 block shadow-inner">
+                                    {language === 'FR' ? 'INVITÉ' : 'GUEST'}
+                                  </span>
+                                )}
                                 {isUserAdmin && (
                                   <span className="px-1.5 py-0.2 text-[8px] rounded-sm font-black font-mono bg-amber-50 border border-amber-200 text-amber-600 block shadow-inner">
                                     ADMIN
@@ -487,7 +493,7 @@ export default function AdminPanelView({
                                   be used to accidentally lock everyone out of admin access. */}
                               {u.userId !== currentUserUid && (
                                 <button
-                                  onClick={() => deleteCandidate(u.userId, u.email)}
+                                  onClick={() => deleteCandidate(u.userId, candidateLabel(u, language))}
                                   className="px-1.5 py-0.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 rounded-md text-[10px] font-black cursor-pointer transition-all flex items-center gap-1"
                                   title={language === 'FR' ? "Supprimer définitivement ce compte" : "Permanently delete this account"}
                                 >
@@ -739,7 +745,7 @@ export default function AdminPanelView({
           >
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
               <div className="min-w-0">
-                <h3 className="text-sm font-black text-indigo-950 truncate">{detailCandidate?.email || detailCandidateUid}</h3>
+                <h3 className="text-sm font-black text-indigo-950 truncate">{detailCandidate ? candidateLabel(detailCandidate, language) : detailCandidateUid}</h3>
                 <span className="text-[10px] font-mono text-slate-600 font-bold">ID: {detailCandidateUid}</span>
               </div>
               <button

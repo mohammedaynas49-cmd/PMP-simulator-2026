@@ -397,9 +397,18 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
             durationOfUtilization: 0,
             accessStatus: 'pending',
             role: 'candidate',
-            testsCount: 0
+            testsCount: 0,
+            // Guests all share the same placeholder email, so the name they typed at sign-in
+            // (read from localStorage - see AuthScreen) is what lets an admin tell them apart.
+            ...(user.isAnonymous ? {
+              isGuest: true,
+              guestName: (localStorage.getItem('pmp_guest_name') || user.displayName || '').slice(0, 40) || undefined
+            } : {})
           };
+          // Firestore rejects undefined field values
+          Object.keys(initialData).forEach((k) => (initialData as any)[k] === undefined && delete (initialData as any)[k]);
           await setDoc(docRef, initialData);
+          localStorage.removeItem('pmp_guest_name');
         }
 
         // 2. Fetch Global config settings if present
