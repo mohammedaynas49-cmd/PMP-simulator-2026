@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { PMPQuestion, PMPDomain, MasteryMatrix, UserSession } from '../types';
 import { handleFirestoreError, OperationType } from '../lib/firebaseErrors';
@@ -297,6 +297,26 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     if (examQuestions.length === 0) return;
     setExamQuestions(buildMockExamQuestions(language, examBlueprintRef.current));
   }, [language]);
+
+  // While a candidate sits on the pending/restricted lockout screen, listen to their own session
+  // doc live so an admin's Approve/Restrict takes effect immediately. The profile is otherwise
+  // read once at sign-in (below), so without this an approved candidate stayed locked out until
+  // they happened to reload the page.
+  useEffect(() => {
+    if (!user || !isProfileLoaded || isAdmin) return;
+    if (accessStatus !== 'pending' && accessStatus !== 'restricted') return;
+    const unsub = onSnapshot(
+      doc(db, 'sessions', user.uid),
+      (snap) => {
+        const next = snap.data()?.accessStatus;
+        if (next === 'granted' || next === 'pending' || next === 'restricted') {
+          setAccessStatus(next);
+        }
+      },
+      () => { /* permission-denied / offline mock guest: the manual refresh button still works */ }
+    );
+    return unsub;
+  }, [user?.uid, isProfileLoaded, isAdmin, accessStatus]);
 
   // Load / Initialize user session from Firestore and global config settings
   useEffect(() => {
@@ -1146,6 +1166,13 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
                     : "Your access to this simulator has been revoked by an administrator. Contact them if you believe this is a mistake.")}
             </p>
           </div>
+          <button
+            id="access_locked_refresh_btn"
+            onClick={() => window.location.reload()}
+            className="w-full bg-white border-2 border-violet-200 text-violet-700 py-3 px-4 rounded-2xl font-black text-sm transition-all hover:bg-violet-50 active:scale-[0.98] cursor-pointer"
+          >
+            {language === 'FR' ? "Vérifier à nouveau mon accès" : "Check my access again"}
+          </button>
           <button
             id="access_locked_logout_btn"
             onClick={onLogout}
