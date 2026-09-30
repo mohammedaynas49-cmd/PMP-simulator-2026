@@ -1166,6 +1166,13 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
                     : "Your access to this simulator has been revoked by an administrator. Contact them if you believe this is a mistake.")}
             </p>
           </div>
+          {user?.isAnonymous && (
+            <p id="access_locked_guest_note" className="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-3 leading-relaxed">
+              {language === 'FR'
+                ? "Mode invité : ne vous déconnectez pas et gardez cet onglet ouvert. Une nouvelle connexion invité crée un nouveau compte, qu'il faudrait faire approuver à nouveau."
+                : "Guest mode: don't log out, and keep this tab open. Signing in as a guest again creates a brand-new account that would need to be approved again."}
+            </p>
+          )}
           <button
             id="access_locked_refresh_btn"
             onClick={() => window.location.reload()}
@@ -1175,7 +1182,12 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
           </button>
           <button
             id="access_locked_logout_btn"
-            onClick={onLogout}
+            onClick={() => {
+              if (user?.isAnonymous && !window.confirm(language === 'FR'
+                ? "En vous déconnectant, vous perdrez ce compte invité et son approbation. Continuer ?"
+                : "Logging out will discard this guest account and its approval. Continue?")) return;
+              onLogout();
+            }}
             className="w-full bg-gradient-to-r from-violet-600 via-pink-600 to-amber-500 text-white py-3.5 px-4 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-[0.98] cursor-pointer"
           >
             {language === 'FR' ? "Se déconnecter" : "Log Out"}
