@@ -566,6 +566,13 @@ export default function Dashboard({ user: propUser, onLogout, language, setLangu
     setDomainSessionCorrect(0);
     setDomainSessionComplete(false);
     setActiveCaseStudyId(null);
+    // Without this, the PREVIOUS case study (already answered, feedback revealed) stays on
+    // screen - since domainSessionComplete just flipped false, QuestionCard re-renders with
+    // whatever currentQuestion still holds - until the new fetch resolves, which can take several
+    // seconds (a French-source case study is translated on the fly). Clearing it here falls
+    // through to the loading state instead, so the old case study is visibly replaced rather than
+    // lingering.
+    setCurrentQuestion(null);
     fetchNewQuestion(undefined, undefined, undefined, undefined, true);
   };
 
