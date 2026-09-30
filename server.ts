@@ -2396,7 +2396,14 @@ async function startServer() {
           collection(db, "books").get(),
           "list books for case study extraction"
         );
-        const caseStudyBook = booksSnap.docs.find(d => isCaseStudyBookName(d.data().name || ""));
+        // If more than one case-study-classified book exists (e.g. an admin re-uploads an
+        // updated version of the same file without deleting the old one first), the most
+        // recently uploaded one wins - an admin re-uploading a corrected/updated file expects it
+        // to take over, not to be served stale content from whichever doc Firestore happened to
+        // return first.
+        const caseStudyBook = booksSnap.docs
+          .filter(d => isCaseStudyBookName(d.data().name || ""))
+          .sort((a, b) => (b.data().uploadedAt || "").localeCompare(a.data().uploadedAt || ""))[0];
         if (caseStudyBook) {
           const extractedSnap = await withFirestoreTimeout(
             collection(db, "questions").where("source_book_id", "==", caseStudyBook.id).get(),

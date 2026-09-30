@@ -192,8 +192,8 @@ export default function DomainPracticeView({
                 {prefQuestionType === 'case_study' && (
                   <p className="text-[11px] text-amber-700 font-bold bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
                     📚 {language === 'FR'
-                      ? "Pour les Études de Cas, ce choix sert de repli si aucune étude de cas réelle n'est disponible - une étude de cas extraite d'un fichier fixe elle-même son nombre exact de questions."
-                      : "For Case Studies, this choice is only a fallback if no real case study is available - a case study extracted from a file sets its own exact question count."}
+                      ? "Désactivé pour les Études de Cas : une étude de cas extraite d'un fichier fixe elle-même son nombre exact de questions."
+                      : "Disabled for Case Studies: a case study extracted from a file sets its own exact question count."}
                   </p>
                 )}
                 <div className="flex flex-wrap gap-3">
@@ -203,10 +203,13 @@ export default function DomainPracticeView({
                       id={`domain_target_${count}_btn`}
                       type="button"
                       onClick={() => setDomainTargetCount(count)}
-                      className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-black border transition-all cursor-pointer ${
-                        domainTargetCount === count
-                          ? 'bg-violet-50 border-violet-300 text-violet-950 shadow-xxs'
-                          : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-50'
+                      disabled={prefQuestionType === 'case_study'}
+                      className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-black border transition-all ${
+                        prefQuestionType === 'case_study'
+                          ? 'bg-slate-50/30 border-slate-100 text-slate-300 cursor-not-allowed'
+                          : domainTargetCount === count
+                          ? 'bg-violet-50 border-violet-300 text-violet-950 shadow-xxs cursor-pointer'
+                          : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer'
                       }`}
                     >
                       {count}
@@ -216,10 +219,13 @@ export default function DomainPracticeView({
                     id="domain_target_unlimited_btn"
                     type="button"
                     onClick={() => setDomainTargetCount(null)}
-                    className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-black border transition-all cursor-pointer ${
-                      domainTargetCount === null
-                        ? 'bg-violet-50 border-violet-300 text-violet-950 shadow-xxs'
-                        : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-50'
+                    disabled={prefQuestionType === 'case_study'}
+                    className={`px-5 py-3 rounded-2xl text-xs sm:text-sm font-black border transition-all ${
+                      prefQuestionType === 'case_study'
+                        ? 'bg-slate-50/30 border-slate-100 text-slate-300 cursor-not-allowed'
+                        : domainTargetCount === null
+                        ? 'bg-violet-50 border-violet-300 text-violet-950 shadow-xxs cursor-pointer'
+                        : 'bg-slate-50/50 border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer'
                     }`}
                   >
                     {language === 'FR' ? "Illimité" : "Unlimited"}
@@ -455,15 +461,23 @@ export default function DomainPracticeView({
               )}
             </div>
 
-            <button
-              id="regenerated_question_btn"
-              onClick={() => fetchNewQuestion()}
-              disabled={isLoadingNew}
-              className="flex items-center gap-2 text-xs font-black font-mono bg-gradient-to-r from-violet-600 via-pink-500 to-amber-500 hover:opacity-90 active:scale-95 text-white px-5 py-3 rounded-2xl border border-transparent transition-all cursor-pointer shadow-md"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingNew ? 'animate-spin' : ''} text-white`} />
-              <span>{texts.forceRegene}</span>
-            </button>
+            {/* Hidden once a session/case-study is complete - it calls the plain fetchNewQuestion
+                (not the dedicated completion-screen handlers below), which doesn't reset
+                domainSessionComplete or activeCaseStudyId, so clicking it here would silently
+                fetch a question into state without ever displaying it, and would bypass the
+                Case Studies "next case study or exit" decision entirely. The completion screen's
+                own dedicated buttons are the only way forward once it's showing. */}
+            {!domainSessionComplete && (
+              <button
+                id="regenerated_question_btn"
+                onClick={() => fetchNewQuestion()}
+                disabled={isLoadingNew}
+                className="flex items-center gap-2 text-xs font-black font-mono bg-gradient-to-r from-violet-600 via-pink-500 to-amber-500 hover:opacity-90 active:scale-95 text-white px-5 py-3 rounded-2xl border border-transparent transition-all cursor-pointer shadow-md"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingNew ? 'animate-spin' : ''} text-white`} />
+                <span>{texts.forceRegene}</span>
+              </button>
+            )}
           </div>
 
           {/* ECO Domain Dashboard Performance & Improvement Board */}
