@@ -2184,6 +2184,21 @@ async function startServer() {
   // cost or risk a slightly different re-translation each time. Best-effort: falls back to
   // serving the English original untouched if Gemini is unavailable or translation fails, rather
   // than blocking the question from being served at all.
+  // Cheap heuristic to detect a source document that's already written in French, so a French
+  // candidate reading it doesn't pay for (and wait on) a needless French-to-French Gemini
+  // translation call on every single serve - a real, measured cause of the "next case study takes
+  // forever / seems stuck" complaint once tested against a genuinely French-source document.
+  // Counts common French-only function words and accented characters; a real French paragraph
+  // trips this easily, while an English one essentially never does.
+  function looksAlreadyFrench(text: string): boolean {
+    const sample = (text || "").toLowerCase();
+    if (!sample) return false;
+    const accentMatches = (sample.match(/[éèêàùçôîïâû]/g) || []).length;
+    if (accentMatches >= 3) return true;
+    const frenchWordMatches = (sample.match(/\b(le|la|les|des|une|un|est|dans|pour|avec|qui|que|sont|être|et|de|du)\b/g) || []).length;
+    return frenchWordMatches >= 6;
+  }
+
   async function translateCaseStudyQuestionToFrench(q: any): Promise<any> {
     if (q.fr_scenario && q.fr_case_study_scenario && Array.isArray(q.fr_options) && q.fr_options.length === q.options.length) {
       return {
@@ -2194,6 +2209,10 @@ async function startServer() {
         options: q.fr_options,
         explanation: q.fr_explanation || q.explanation
       };
+    }
+
+    if (looksAlreadyFrench(q.case_study_scenario) || looksAlreadyFrench(q.scenario)) {
+      return q; // already French - no translation needed, skip the Gemini call entirely
     }
 
     const client = getGeminiClient();
