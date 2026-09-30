@@ -2211,8 +2211,22 @@ async function startServer() {
       };
     }
 
-    if (looksAlreadyFrench(q.case_study_scenario) || looksAlreadyFrench(q.scenario)) {
-      return q; // already French - no translation needed, skip the Gemini call entirely
+    // Skip translation only when EVERY displayed field is already French. Checking just the
+    // narrative/question was a bug: a document with a French narrative but English answer
+    // options was served with untranslated options. Options are short, so they're judged as one
+    // joined blob with lower thresholds than a full paragraph.
+    const optionsBlob = (q.options || []).join(" ; ");
+    const optionsLookFrench = (() => {
+      const s = optionsBlob.toLowerCase();
+      if (!s) return true;
+      const accents = (s.match(/[éèêàùçôîïâû]/g) || []).length;
+      const words = (s.match(/\b(le|la|les|des|une|un|est|dans|pour|avec|qui|que|sont|être|et|de|du|au|aux|ne|pas)\b/g) || []).length;
+      return accents >= 2 || words >= 3;
+    })();
+    const narrativeAndQuestionFrench =
+      (!q.case_study_scenario || looksAlreadyFrench(q.case_study_scenario)) && looksAlreadyFrench(q.scenario);
+    if (narrativeAndQuestionFrench && optionsLookFrench) {
+      return q; // fully French - no translation needed, skip the Gemini call entirely
     }
 
     const client = getGeminiClient();
@@ -2225,7 +2239,8 @@ async function startServer() {
         Translate the following PMP case study content into professional, natural French (the
         style used in official PMBOK French translations), preserving the exact meaning - do not
         add, remove, or alter any information, and keep any acronyms in parentheses (e.g. "(EV)")
-        unchanged.
+        unchanged. Every field must come back fully in French, including EVERY answer option; if a
+        field is already in French, return it as-is.
 
         Case study title: ${q.case_study_title || ""}
         Shared narrative: ${q.case_study_scenario || ""}
