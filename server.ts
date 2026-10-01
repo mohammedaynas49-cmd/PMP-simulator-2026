@@ -2199,48 +2199,53 @@ async function startServer() {
     return frenchWordMatches >= 6;
   }
 
-  async function translateCaseStudyQuestionToFrench(q: any): Promise<any> {
-    if (q.fr_scenario && q.fr_case_study_scenario && Array.isArray(q.fr_options) && q.fr_options.length === q.options.length) {
+  function optionsLookFrench(options: string[]): boolean {
+    const s = (options || []).join(" ; ").toLowerCase();
+    if (!s) return false;
+    const accents = (s.match(/[éèêàùçôîïâû]/g) || []).length;
+    const words = (s.match(/(le|la|les|des|une|un|est|dans|pour|avec|qui|que|sont|être|et|de|du|au|aux|ne|pas)/g) || []).length;
+    return accents >= 2 || words >= 3;
+  }
+
+  // Serves a case-study question in the candidate's UI language, whichever language the uploaded
+  // document was written in (so a French document read from an English UI is translated to
+  // English too, not just English documents to French). Each target language caches its own
+  // translation on the question doc (fr_* / en_* fields).
+  async function translateCaseStudyQuestion(q: any, target: "FR" | "EN"): Promise<any> {
+    const p = target === "FR" ? "fr_" : "en_";
+    if (q[p + "scenario"] && q[p + "case_study_scenario"] && Array.isArray(q[p + "options"]) && q[p + "options"].length === q.options.length) {
       return {
         ...q,
-        case_study_title: q.fr_case_study_title,
-        case_study_scenario: q.fr_case_study_scenario,
-        scenario: q.fr_scenario,
-        options: q.fr_options,
-        explanation: q.fr_explanation || q.explanation
+        case_study_title: q[p + "case_study_title"],
+        case_study_scenario: q[p + "case_study_scenario"],
+        scenario: q[p + "scenario"],
+        options: q[p + "options"],
+        explanation: q[p + "explanation"] || q.explanation
       };
     }
 
-    // Skip translation only when EVERY displayed field is already French. Checking just the
-    // narrative/question was a bug: a document with a French narrative but English answer
-    // options was served with untranslated options. Options are short, so they're judged as one
-    // joined blob with lower thresholds than a full paragraph.
-    const optionsBlob = (q.options || []).join(" ; ");
-    const optionsLookFrench = (() => {
-      const s = optionsBlob.toLowerCase();
-      if (!s) return true;
-      const accents = (s.match(/[éèêàùçôîïâû]/g) || []).length;
-      const words = (s.match(/\b(le|la|les|des|une|un|est|dans|pour|avec|qui|que|sont|être|et|de|du|au|aux|ne|pas)\b/g) || []).length;
-      return accents >= 2 || words >= 3;
-    })();
-    const narrativeAndQuestionFrench =
-      (!q.case_study_scenario || looksAlreadyFrench(q.case_study_scenario)) && looksAlreadyFrench(q.scenario);
-    if (narrativeAndQuestionFrench && optionsLookFrench) {
-      return q; // fully French - no translation needed, skip the Gemini call entirely
-    }
+    // Skip translation only when EVERY displayed field is already in the target language.
+    const frenchFlags = [
+      q.case_study_scenario ? looksAlreadyFrench(q.case_study_scenario) : null,
+      looksAlreadyFrench(q.scenario),
+      (q.options || []).length ? optionsLookFrench(q.options) : null
+    ].filter((v) => v !== null) as boolean[];
+    const alreadyInTarget = target === "FR" ? frenchFlags.every(Boolean) : frenchFlags.every((v) => !v);
+    if (alreadyInTarget) return q;
 
     const client = getGeminiClient();
     if (!client) return q;
 
+    const langName = target === "FR" ? "professional, natural French (the style used in official PMBOK French translations)" : "professional, natural English (the style used in the official PMBOK Guide)";
     try {
       const response = await generateContentWithRetry(client, {
         model: "gemini-3.5-flash",
         contents: `
-        Translate the following PMP case study content into professional, natural French (the
-        style used in official PMBOK French translations), preserving the exact meaning - do not
-        add, remove, or alter any information, and keep any acronyms in parentheses (e.g. "(EV)")
-        unchanged. Every field must come back fully in French, including EVERY answer option; if a
-        field is already in French, return it as-is.
+        Translate the following PMP case study content into ${langName}, preserving the exact
+        meaning - do not add, remove, or alter any information, and keep any acronyms in
+        parentheses (e.g. "(EV)") unchanged. Every field must come back fully in the target
+        language, including EVERY answer option; if a field is already in the target language,
+        return it as-is.
 
         Case study title: ${q.case_study_title || ""}
         Shared narrative: ${q.case_study_scenario || ""}
@@ -2269,27 +2274,27 @@ async function startServer() {
       if (!rawText) return q;
       const translated = JSON.parse(rawText);
       if (!translated || !Array.isArray(translated.options) || translated.options.length !== q.options.length) {
-        return q; // malformed - fall back to English rather than risk a mismatched option count
+        return q; // malformed - serve the original rather than risk a mismatched option count
       }
 
-      const frFields = {
-        fr_case_study_title: translated.case_study_title,
-        fr_case_study_scenario: translated.case_study_scenario,
-        fr_scenario: translated.scenario,
-        fr_options: translated.options,
-        fr_explanation: translated.explanation
+      const cached = {
+        [p + "case_study_title"]: translated.case_study_title,
+        [p + "case_study_scenario"]: translated.case_study_scenario,
+        [p + "scenario"]: translated.scenario,
+        [p + "options"]: translated.options,
+        [p + "explanation"]: translated.explanation
       };
-      await doc(db, "questions", q.question_id).update(frFields).catch(() => {});
+      await doc(db, "questions", q.question_id).update(cached).catch(() => {});
       return {
         ...q,
-        case_study_title: frFields.fr_case_study_title,
-        case_study_scenario: frFields.fr_case_study_scenario,
-        scenario: frFields.fr_scenario,
-        options: frFields.fr_options,
-        explanation: frFields.fr_explanation
+        case_study_title: translated.case_study_title,
+        case_study_scenario: translated.case_study_scenario,
+        scenario: translated.scenario,
+        options: translated.options,
+        explanation: translated.explanation
       };
     } catch (err) {
-      console.error(`[Case Study Translation] Failed to translate "${q.question_id}":`, err);
+      console.error(`[Case Study Translation] Failed to translate "${q.question_id}" to ${target}:`, err);
       return q;
     }
   }
@@ -2510,8 +2515,8 @@ async function startServer() {
             const chosenKey = candidateKeys[Math.floor(Math.random() * candidateKeys.length)];
             const groupQuestions = groups.get(chosenKey)!.sort((a, b) => (a.question_id || "").localeCompare(b.question_id || ""));
             const picked = groupQuestions[0];
-            const servedQuestion = isFrench ? await translateCaseStudyQuestionToFrench(picked) : picked;
-            console.log(`[Case Study Extraction] Serving a real question from "${caseStudyBook.data().name}" (${unused.length} unused left, case_study_id=${chosenKey}, translated=${isFrench}).`);
+            const servedQuestion = await translateCaseStudyQuestion(picked, isFrench ? "FR" : "EN");
+            console.log(`[Case Study Extraction] Serving a real question from "${caseStudyBook.data().name}" (${unused.length} unused left, case_study_id=${chosenKey}, target=${isFrench ? "FR" : "EN"}).`);
             return res.json({
               question: { ...servedQuestion, question_focus_type: "case_study" },
               fallback: false,
